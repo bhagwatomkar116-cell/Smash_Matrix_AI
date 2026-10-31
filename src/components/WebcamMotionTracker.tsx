@@ -3,27 +3,36 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 export interface WebcamMotionTrackerProps {
-  onStrokeDetected: (strokeType: 'smash' | 'drop' | 'clear') => void;
-  onHandMove?: (x: number, y: number) => void;
+  onStrokeDetected: (strokeType: 'smash' | 'drop') => void;
+  onTrackingStatusChange: (active: boolean) => void;
 }
 
-export default function WebcamMotionTracker({ onStrokeDetected, onHandMove }: WebcamMotionTrackerProps) {
+export default function WebcamMotionTracker({ onStrokeDetected, onTrackingStatusChange }: WebcamMotionTrackerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [trackerStatus, setTrackerStatus] = useState<string>('INITIALIZING MEDIAPIPE 21-NODE MESH...');
+  const [trackerStatus, setTrackerStatus] = useState<string>('INITIALIZING ENGINE...');
   const [hasError, setHasError] = useState<boolean>(false);
 
   useEffect(() => {
     let activeStream: MediaStream | null = null;
     let cameraInstance: any = null;
-    let handsInstance: any = null;
+    let poseInstance: any = null;
     let isUnmounted = false;
+    let animationFrameId: number;
 
-    // High sensitivity telemetry arrays
-    const wristYHistory: number[] = [];
+    // Movement History Tracking
+    const yHistory: number[] = [];
     const HISTORY_LIMIT = 8;
     let lastTriggerTime = 0;
-    const COOLDOWN_MS = 550;
+    const COOLDOWN_MS = 750;
+
+    // --- INTEGRATED GAME PHYSICS VARIABLES ---
+    let shuttleX = 100;
+    let shuttleY = 150;
+    let vx = 5;
+    let vy = -4;
+    const gravity = 0.15;
+    const netX = 320; // Center point of our 640x480 resolution canvas
 
     const loadScript = (src: string): Promise<void> => {
       return new Promise((resolve, reject) => {
@@ -42,43 +51,77 @@ export default function WebcamMotionTracker({ onStrokeDetected, onHandMove }: We
 
     const initializeSystem = async () => {
       try {
-        setTrackerStatus('FETCHING MEDIAPIPE SKELETAL LIBS...');
-        // Official CDN links for MediaPipe Camera Utils and Hands
-        await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js');
-        await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js');
+        setTrackerStatus('FETCHING SKELETAL DEPENDENCIES...');
+        await loadScript('https://jsdelivr.net');
+        await loadScript('https://jsdelivr.net');
 
         if (isUnmounted) return;
 
         const globalWindow = window as any;
-        if (!globalWindow.Hands || !globalWindow.Camera) {
-          throw new Error('MediaPipe Hands global namespaces failed to resolve.');
+        if (!globalWindow.Pose || !globalWindow.Camera) {
+          throw new Error('MediaPipe libraries failed to compile.');
         }
 
-        setTrackerStatus('CALIBRATING 21-JOINT GEOMETRY...');
+        setTrackerStatus('ACQUIRING WEBCAM ENGINE FEED...');
 
-        handsInstance = new globalWindow.Hands({
-          locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+        poseInstance = new globalWindow.Pose({
+          locateFile: (file: string) => `https://jsdelivr.net{file}`,
         });
 
-        handsInstance.setOptions({
-          maxNumHands: 1,
+        poseInstance.setOptions({
           modelComplexity: 1,
-          minDetectionConfidence: 0.65,
-          minTrackingConfidence: 0.65,
+          smoothLandmarks: true,
+          minDetectionConfidence: 0.70,
+          minTrackingConfidence: 0.70,
         });
 
-        // 21-node hand bone connections
-        const connections = [
-          [0, 1], [1, 2], [2, 3], [3, 4],       // Thumb
-          [0, 5], [5, 6], [6, 7], [7, 8],       // Index
-          [9, 10], [10, 11], [11, 12],          // Middle
-          [13, 14], [14, 15], [15, 16],         // Ring
-          [0, 17], [17, 18], [18, 19], [19, 20],// Pinky
-          [5, 9], [9, 13], [13, 17]             // Palm web arc
-        ];
-
-        handsInstance.onResults((results: any) => {
+        // Dedicated 3D-Style Game Loop Canvas Renderer
+        const updatePhysicsLoop = () => {
           if (isUnmounted || !canvasRef.current) return;
+          const canvas = canvasRef.current;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
+
+          // Apply Gravity vector acceleration
+          vy += gravity;
+          shuttleX += vx;
+          shuttleY += vy;
+
+          // FIX: Automated boundary checking forcing the shuttlecock over the center net coordinates
+          if (Math.abs(shuttleX - netX) < 15 && shuttleY > 280) {
+            // Net collision recovery safety backup override
+            vy = -Math.abs(vy) * 1.5;
+            shuttleY = 270;
+          }
+
+          // Wall and basic automated floor rebounds
+          if (shuttleY > 440) {
+            vy = -Math.abs(vy) * 0.8;
+            shuttleY = 440;
+          }
+          if (shuttleX < 20 || shuttleX > 620) {
+            vx = -vx;
+          }
+
+          // Draw the physical net wireframe lines
+          ctx.strokeStyle = '#444444';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(netX, 480);
+          ctx.lineTo(netX, 300); // Net peak height marker
+          ctx.stroke();
+
+          // Draw the floating interactive shuttlecock node particle
+          ctx.fillStyle = '#FFFFFF';
+          ctx.beginPath();
+          ctx.arc(shuttleX, shuttleY, 8, 0, 2 * Math.PI);
+          ctx.fill();
+
+          animationFrameId = requestAnimationFrame(updatePhysicsLoop);
+        };
+
+        poseInstance.onResults((results: any) => {
+          if (isUnmounted || !canvasRef.current || !videoRef.current) return;
 
           const canvas = canvasRef.current;
           const ctx = canvas.getContext('2d');
@@ -86,98 +129,60 @@ export default function WebcamMotionTracker({ onStrokeDetected, onHandMove }: We
 
           ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-          if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-            const landmarks = results.multiHandLandmarks[0];
+          if (results.poseLandmarks) {
+            onTrackingStatusChange(true);
+            setTrackerStatus('KINETIC TELEMETRY ACTIVE');
 
-            const wrist = landmarks[0];
-            const thumbTip = landmarks[4];
-            const indexTip = landmarks[8];
-            const middleTip = landmarks[12];
-            const ringTip = landmarks[16];
-            const pinkyTip = landmarks[20];
-            const fingertips = [thumbTip, indexTip, middleTip, ringTip, pinkyTip];
+            ctx.save();
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+            ctx.restore();
 
-            // 1. Semi-transparent Palm Webbing
-            ctx.fillStyle = 'rgba(0, 230, 118, 0.08)';
-            ctx.beginPath();
-            [0, 1, 5, 9, 13, 17].forEach((idx, i) => {
-              const pt = landmarks[idx];
-              if (i === 0) ctx.moveTo(pt.x * canvas.width, pt.y * canvas.height);
-              else ctx.lineTo(pt.x * canvas.width, pt.y * canvas.height);
-            });
-            ctx.closePath();
-            ctx.fill();
+            const rightShoulder = results.poseLandmarks[12];
+            const rightElbow = results.poseLandmarks[14];
+            const rightWrist = results.poseLandmarks[16];
 
-            // 2. Draw Geometric Connective Lines for Knuckle Strands
-            ctx.strokeStyle = '#00e676';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            connections.forEach(([start, end]) => {
-              const startPt = landmarks[start];
-              const endPt = landmarks[end];
-              if (startPt && endPt) {
-                ctx.moveTo(startPt.x * canvas.width, startPt.y * canvas.height);
-                ctx.lineTo(endPt.x * canvas.width, endPt.y * canvas.height);
-              }
-            });
-            ctx.stroke();
-
-            // 3. Draw Joint Indicators
-            landmarks.forEach((joint: any) => {
-              ctx.fillStyle = '#060a12';
-              ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-              ctx.lineWidth = 1;
+            if (rightShoulder && rightElbow && rightWrist) {
+              // Draw skeletal link indicators
+              ctx.strokeStyle = '#FFFFFF';
+              ctx.lineWidth = 4;
               ctx.beginPath();
-              ctx.arc(joint.x * canvas.width, joint.y * canvas.height, 3.5, 0, 2 * Math.PI);
-              ctx.fill();
+              ctx.moveTo((1 - rightShoulder.x) * canvas.width, rightShoulder.y * canvas.height);
+              ctx.lineTo((1 - rightElbow.x) * canvas.width, rightElbow.y * canvas.height);
+              ctx.lineTo((1 - rightWrist.x) * canvas.width, rightWrist.y * canvas.height);
               ctx.stroke();
-            });
 
-            // 4. Highlight Fingertips in Bright High-Contrast White
-            fingertips.forEach((tip) => {
-              if (tip) {
-                ctx.fillStyle = '#FFFFFF';
-                ctx.beginPath();
-                ctx.arc(tip.x * canvas.width, tip.y * canvas.height, 5, 0, 2 * Math.PI);
-                ctx.fill();
-              }
-            });
+              yHistory.push(rightWrist.y);
+              if (yHistory.length > HISTORY_LIMIT) yHistory.shift();
 
-            // Pass Position
-            if (onHandMove) {
-              const normX = ((1 - wrist.x) - 0.5) * 2.2;
-              const normY = (1 - wrist.y);
-              onHandMove(normX, normY);
-            }
+              const currentTime = Date.now();
+              if (currentTime - lastTriggerTime > COOLDOWN_MS && yHistory.length >= 3) {
+                const previousWristY = yHistory[yHistory.length - 3];
+                const velocityDelta = rightWrist.y - previousWristY;
+                const dynamicShoulderHeight = Math.abs(rightShoulder.y - rightElbow.y);
 
-            // 5. Kinetic Stroke Velocity Mechanics
-            const currentWristY = wrist.y;
-            wristYHistory.push(currentWristY);
-            if (wristYHistory.length > HISTORY_LIMIT) wristYHistory.shift();
+                const isHandAboveShoulder = rightWrist.y < rightShoulder.y;
 
-            const currentTime = Date.now();
-            if (currentTime - lastTriggerTime > COOLDOWN_MS && wristYHistory.length >= 4) {
-              const previousWristY = wristYHistory[wristYHistory.length - 4];
-              const velocityDelta = currentWristY - previousWristY; 
-              const isHandElevated = indexTip.y < wrist.y;
-
-              if (isHandElevated && velocityDelta > 0.08) {
-                // Downward whip from high stance = SMASH
-                onStrokeDetected('smash');
-                lastTriggerTime = currentTime;
-                wristYHistory.length = 0;
-              } else if (velocityDelta < -0.09) {
-                // Upward lift = CLEAR
-                onStrokeDetected('clear');
-                lastTriggerTime = currentTime;
-                wristYHistory.length = 0;
-              } else if (velocityDelta > 0.03 && velocityDelta < 0.07 && isHandElevated) {
-                // Controlled slower downward movement = DROP SHOT
-                onStrokeDetected('drop');
-                lastTriggerTime = currentTime;
-                wristYHistory.length = 0;
+                if (isHandAboveShoulder && velocityDelta > (dynamicShoulderHeight * 0.42)) {
+                  onStrokeDetected('smash');
+                  // FIXED VECTOR: Spike shuttle velocity at an upward trajectory path to clear the net easily
+                  vx = 8;
+                  vy = -6;
+                  lastTriggerTime = currentTime;
+                  yHistory.length = 0;
+                } else if (isHandAboveShoulder && velocityDelta > (dynamicShoulderHeight * 0.12) && velocityDelta < (dynamicShoulderHeight * 0.30)) {
+                  onStrokeDetected('drop');
+                  vx = 4;
+                  vy = -3;
+                  lastTriggerTime = currentTime;
+                  yHistory.length = 0;
+                }
               }
             }
+          } else {
+            onTrackingStatusChange(false);
+            setTrackerStatus('STAND IN CAMERA VIEW FRAME');
           }
         });
 
@@ -191,21 +196,21 @@ export default function WebcamMotionTracker({ onStrokeDetected, onHandMove }: We
 
           cameraInstance = new globalWindow.Camera(videoRef.current, {
             onFrame: async () => {
-              if (videoRef.current && handsInstance) {
-                await handsInstance.send({ image: videoRef.current });
+              if (videoRef.current && poseInstance) {
+                await poseInstance.send({ image: videoRef.current });
               }
             },
             width: 640,
             height: 480,
           });
-          
+
           await cameraInstance.start();
-          setTrackerStatus('21-NODE SKELETAL ENGINE: ONLINE');
+          updatePhysicsLoop(); // Fires up the corrected rendering canvas timeline
         }
       } catch (err) {
         console.error(err);
         setHasError(true);
-        setTrackerStatus('CRITICAL FAILURE INITIALIZING DEVICE TELEMETRY LAYER.');
+        setTrackerStatus('CRITICAL FAILURE SETUP HARDWARE ENGINE PIPELINE.');
       }
     };
 
@@ -213,35 +218,29 @@ export default function WebcamMotionTracker({ onStrokeDetected, onHandMove }: We
 
     return () => {
       isUnmounted = true;
+      cancelAnimationFrame(animationFrameId);
       if (cameraInstance && cameraInstance.stop) cameraInstance.stop();
       if (activeStream) {
         activeStream.getTracks().forEach((track) => track.stop());
       }
-      if (handsInstance && handsInstance.close) handsInstance.close();
+      if (poseInstance && poseInstance.close) poseInstance.close();
     };
-  }, [onStrokeDetected, onHandMove]);
+  }, [onStrokeDetected, onTrackingStatusChange]);
 
   return (
-    <div className="w-full h-full min-h-[380px] bg-[#060911] flex flex-col items-center justify-center relative p-3 select-none border border-[#1a2333] rounded-lg">
-      <div className="absolute top-3 left-3 bg-[#0d1422]/90 px-3 py-1 border border-[#212f45] z-20 font-mono text-[11px] tracking-wider text-neutral-300 uppercase rounded">
-        <span className={`inline-block w-2 h-2 rounded-full mr-2 ${hasError ? 'bg-red-500' : 'bg-emerald-400 animate-pulse'}`}></span>
+    <div className="w-full h-full min-h-[400px] bg-[#0c0c0c] flex flex-col items-center justify-center relative p-2 select-none">
+      <div className="absolute top-3 left-3 bg-[#161616]/90 px-3 py-1 border border-[#333333] z-20 font-mono text-[10px] tracking-wider text-neutral-400">
         {trackerStatus}
       </div>
-
-      <div className="w-full max-w-[580px] aspect-video bg-black border border-[#1a2333] rounded overflow-hidden relative flex items-center justify-center">
-        <video
-          ref={videoRef}
-          playsInline
-          muted
-          className="w-full h-full object-cover scale-x-[-1] opacity-30"
-        />
-        <canvas
-          ref={canvasRef}
-          width={640}
-          height={480}
-          className="absolute top-0 left-0 w-full h-full object-cover scale-x-[-1] z-10 pointer-events-none"
-        />
-      </div>
+      <video ref={videoRef} className="hidden" playsInline muted />
+      <canvas ref={canvasRef} width={640} height={480} className={`w-full h-full object-cover transition-opacity duration-300 ${hasError ? 'opacity-20' : 'opacity-70'}`} />
     </div>
   );
+}
+
+declare global {
+  interface Window {
+    Pose: any;
+    Camera: any;
+  }
 }

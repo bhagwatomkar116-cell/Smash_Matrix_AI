@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SMASH PRO ✦ BWF Gesture Badminton & Gemma AI Arena</title>
+  
+  <!-- Modern Sports Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Rajdhani:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- External Libraries (Three.js & Canvas Confetti) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+  <!-- Ambient Stadium Glow Background -->
+  <div class="bg-ambient"></div>
+
+  <div class="app-container">
+
+    <!-- ====================================================================
+         TOP NAVIGATION BAR
+         ==================================================================== -->
+    <header class="navbar">
+      <div class="nav-brand">
+        <div class="brand-icon">🏸</div>
+        <span>SMASH<span class="highlight">PRO</span></span>
+      </div>
+
+      <nav>
+        <ul class="nav-links">
+          <li><a class="nav-link active" data-view-target="dashboard">🏆 Tournament Hub</a></li>
+          <li><a class="nav-link" data-view-target="arena">⚡ Match Arena</a></li>
+          <li><a class="nav-link" data-view-target="practice">🎯 Gesture Practice</a></li>
+          <li><a class="nav-link" data-view-target="analytics">🤖 Gemma AI Coach</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <!-- Audio Synthesizer Toggle -->
+        <button id="nav-sound-toggle" class="btn-icon-pill active" title="Toggle Sound">
+          <span>🔊 Audio ON</span>
+        </button>
+
+        <!-- Webcam Hand Gesture Bridge Toggle -->
+        <button id="nav-gesture-toggle" class="btn-icon-pill" title="Toggle Webcam Gesture Tracking">
+          <span>📹 Hand Gestures</span>
+        </button>
+
+        <!-- Settings Modal Button -->
+        <button id="btn-open-settings" class="btn-icon-pill" title="Match Settings">
+          <span>⚙️ Settings</span>
+        </button>
+
+        <!-- Player Level Badge -->
+        <div class="player-status-badge">
+          <div class="avatar-mini">IND</div>
+          <span id="user-profile-level" style="font-weight: 700; font-size: 0.85rem; color: var(--brand-green);">LVL 14</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ====================================================================
+         VIEW 1: TOURNAMENT DASHBOARD (HACKTOBERFEST WINNER STYLE)
+         ==================================================================== -->
+    <main id="view-dashboard" class="view-screen active">
+      <div class="dashboard-content">
+
+        <!-- Hero Match Banner -->
+        <section class="hero-match-banner">
+          <div>
+            <div class="hero-tag">✦ BWF SUPER 1000 FINALS • HAND GESTURE POWERED ✦</div>
+            <h1 class="hero-title">DOMINATE THE <span class="accent-green">COURT</span> WITH YOUR HANDS</h1>
+            <p class="hero-subtitle">
+              Step into the 3D stadium. Perform smashes, drops, and clears with real-time hand motion or mouse, then get instant AI tactical coaching powered by Google Gemma.
+            </p>
+            <div class="hero-actions">
+              <button id="btn-play-match" class="btn-primary">
+                <span>🏸 PLAY TOURNAMENT MATCH</span>
+              </button>
+              <button class="btn-secondary" data-view-target="practice">
+                <span>🎯 PRACTICE GESTURES</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Contender Preview Card -->
+          <div class="versus-showcase">
+            <div class="match-contender">
+              <div class="contender-avatar">🇮🇳</div>
+              <div class="contender-name">You (Player)</div>
+              <div class="contender-rank">Diamond II • 1,840 RP</div>
+            </div>
+            <div class="vs-badge">VS</div>
+            <div class="match-contender">
+              <div class="contender-avatar ai-opponent">🇩🇰</div>
+              <div class="contender-name">Viktor AI</div>
+              <div class="contender-rank">World Rank #1 • Legend</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3-Column Tournament Grid -->
+        <div class="dashboard-grid">
+
+          <!-- 1. Player Profile & Progression Card -->
+          <div class="dash-card">
+            <div class="card-header">
+              <div class="card-title">👤 Player Career</div>
+              <span id="user-profile-rank" class="tier-badge">Diamond II</span>
+            </div>
+
+            <div class="profile-hero">
+              <div class="profile-avatar-large">🏸</div>
+              <div class="profile-info">
+                <h3 id="user-profile-name">Player</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Yonex Astrox 100ZZ Equiped</p>
+              </div>
+            </div>
+
+            <div class="stat-progress-bar">
+              <div class="progress-labels">
+                <span>Level Progress</span>
+                <span id="user-profile-xp-text">680 / 1000 XP</span>
+              </div>
+              <div class="progress-track">
+                <div id="user-profile-xp-fill" class="progress-fill" style="width: 68%;"></div>
+              </div>
+            </div>
+
+            <div class="profile-stats-grid">
+              <div class="stat-tile">
+                <div id="user-profile-rp" class="stat-tile-val">1,840</div>
+                <div class="stat-tile-lbl">Ranking Points</div>
+              </div>
+              <div class="stat-tile">
+                <div id="user-profile-wins" class="stat-tile-val">28</div>
+                <div class="stat-tile-lbl">Victories</div>
+              </div>
+              <div class="stat-tile">
+                <div id="user-profile-winrate" class="stat-tile-val">75%</div>
+                <div class="stat-tile-lbl">Win Rate</div>
+              </div>
+            </div>
+
+            <div style="font-size: 0.8rem; color: var(--text-dim); text-align: center; margin-top: 0.5rem;">
+              Winning matches grants +45 RP & XP progression!
+            </div>
+          </div>
+
+          <!-- 2. BWF World Tour Global Ranking Leaderboard -->
+          <div class="dash-card">
+            <div class="card-header">
+              <div class="card-title">🌍 BWF World Rankings Leaderboard</div>
+              <span style="font-size: 0.75rem; color: var(--brand-green); font-weight: 700;">SEASON 2026 LIVE</span>
+            </div>
+
+            <div id="leaderboard-items" class="leaderboard-list">
+              <!-- Dynamically populated by app.js -->
+            </div>
+          </div>
+
+          <!-- 3. Gesture Engine & Calibration Preview -->
+          <div class="dash-card">
+            <div class="card-header">
+              <div class="card-title">🖐️ Hand Gesture Engine</div>
+              <span style="font-size: 0.75rem; color: var(--brand-blue); font-weight: 700;">CV BRIDGE</span>
+            </div>
+
+            <div class="gesture-guide-card">
+              <div class="gesture-preview-box">
+                <div class="gesture-preview-placeholder">
+                  <div style="font-size: 1.8rem;">📹</div>
+                  <div>Webcam Gesture Feed Ready</div>
+                  <button class="btn-icon-pill" style="margin-top: 0.4rem;" onclick="window.BadmintonGestureBridge && window.BadmintonGestureBridge.startWebcam()">
+                    Enable Camera
+                  </button>
+                </div>
+              </div>
+
+              <div class="gesture-badges-grid">
+                <div class="gesture-pill">
+                  <div class="gesture-symbol">⬇️</div>
+                  <div>
+                    <div style="font-weight: 700;">Flick Down</div>
+                    <div style="color: var(--text-dim); font-size: 0.7rem;">Power Smash</div>
+                  </div>
+                </div>
+                <div class="gesture-pill">
+                  <div class="gesture-symbol">⬆️</div>
+                  <div>
+                    <div style="font-weight: 700;">Swipe Up</div>
+                    <div style="color: var(--text-dim); font-size: 0.7rem;">High Clear</div>
+                  </div>
+                </div>
+                <div class="gesture-pill">
+                  <div class="gesture-symbol">👆</div>
+                  <div>
+                    <div style="font-weight: 700;">Tap / Push</div>
+                    <div style="color: var(--text-dim); font-size: 0.7rem;">Net Drop Shot</div>
+                  </div>
+                </div>
+                <div class="gesture-pill">
+                  <div class="gesture-symbol">↔️</div>
+                  <div>
+                    <div style="font-weight: 700;">Hand Move</div>
+                    <div style="color: var(--text-dim); font-size: 0.7rem;">Court Positioning</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="background: rgba(0, 230, 118, 0.08); border: 1px solid rgba(0, 230, 118, 0.2); border-radius: 10px; padding: 0.75rem; font-size: 0.75rem; color: var(--text-muted);">
+                💡 <strong>Gesture Friend Hook:</strong> Call <code>window.BadmintonGestureBridge.triggerShot('smash')</code> or <code>onHandPosition(x,y)</code> anytime!
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+
+    <!-- ====================================================================
+         VIEW 2: 3D MATCH ARENA (THREE.JS BADMINTON COURT)
+         ==================================================================== -->
+    <main id="view-arena" class="view-screen">
+      <div class="arena-view">
+
+        <!-- Three.js Canvas Mount Point -->
+        <div id="three-canvas-container"></div>
+
+        <!-- In-Game HUD Overlay -->
+        <div class="arena-hud">
+
+          <!-- Top Official BWF Scoreboard -->
+          <div class="bwf-scoreboard">
+            <div class="scoreboard-match-info">
+              <span class="match-info-title">BWF FINALS</span>
+              <span class="match-set-tag">SET 1</span>
+            </div>
+
+            <!-- Player 1 (User) -->
+            <div class="scoreboard-player-row">
+              <span class="sc-player-flag">🇮🇳</span>
+              <span class="sc-player-name">YOU</span>
+              <span id="sc-player-dot" class="service-dot active" title="Serving"></span>
+              <div id="sc-player-score" class="sc-score-box">0</div>
+            </div>
+
+            <!-- Player 2 (AI Opponent) -->
+            <div class="scoreboard-player-row">
+              <div id="sc-ai-score" class="sc-score-box">0</div>
+              <span id="sc-ai-dot" class="service-dot" title="Serving"></span>
+              <span class="sc-player-name">VIKTOR AI</span>
+              <span class="sc-player-flag">🇩🇰</span>
+            </div>
+          </div>
+
+          <!-- Top Left: Speedometer & Shot Banner -->
+          <div class="arena-top-left">
+            <div class="speedometer-card">
+              <div>
+                <div id="arena-speed-val" class="speedo-val">0</div>
+                <div class="speedo-unit">KM / H SHUTTLE SPEED</div>
+              </div>
+            </div>
+            <div id="arena-shot-banner" class="shot-banner">READY • SERVE!</div>
+          </div>
+
+          <!-- Bottom Bar: Camera Controls & Gesture PIP -->
+          <div class="arena-bottom-bar">
+
+            <!-- Camera Angles -->
+            <div class="camera-controls-pill">
+              <button class="cam-btn active" data-camera-mode="behind">🎥 Player Cam</button>
+              <button class="cam-btn" data-camera-mode="broadcast">📺 TV Broadcast</button>
+              <button class="cam-btn" data-camera-mode="top">🗺️ Tactical Top</button>
+            </div>
+
+            <!-- Keyboard Fallback Hint -->
+            <div class="control-hint-box">
+              <span><strong>Controls:</strong></span>
+              <span><kbd>Mouse / Hand</kbd> Move</span>
+              <span><kbd>Click / Up</kbd> Smash</span>
+              <span><kbd>R-Click / Down</kbd> Drop</span>
+              <span><kbd>Space</kbd> Clear</span>
+            </div>
+
+            <!-- Hand Gesture Webcam PIP -->
+            <div class="gesture-hud-pip">
+              <div class="pip-header">
+                <span>📹 Gesture Tracker</span>
+                <span id="pip-gesture-feedback" style="font-size: 0.65rem; color: #94a3b8;">Active</span>
+              </div>
+              <div class="pip-video-container">
+                <video id="pip-webcam-video" class="pip-video" autoplay playsinline muted></video>
+                <canvas id="pip-hand-canvas" class="pip-hand-canvas" width="220" height="120"></canvas>
+              </div>
+              <div class="pip-status">
+                <span>Status:</span>
+                <span id="pip-hand-status" class="detected">Tracking Active</span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+
+    <!-- ====================================================================
+         VIEW 3: POST-MATCH GEMMA AI ANALYSIS VIEW
+         ==================================================================== -->
+    <main id="view-analytics" class="view-screen">
+      <div class="analytics-content">
+
+        <!-- Victory / Defeat Banner -->
+        <section class="victory-banner">
+          <h1 id="analytics-victory-title" class="victory-title">VICTORY! MATCH WON</h1>
+          <div id="analytics-victory-score" class="victory-score">YOU 11 — 7 AI OPPONENT</div>
+          <p style="color: var(--text-muted); margin-top: 0.5rem;">Match officially completed under BWF tournament regulations</p>
+        </section>
+
+        <div class="analytics-grid">
+
+          <!-- Gemma AI Coach Card -->
+          <div class="gemma-coach-card">
+            <div class="gemma-header">
+              <div class="gemma-badge">
+                <div class="gemma-avatar">🤖</div>
+                <div>
+                  <h3 style="font-family: var(--font-display); font-size: 1.3rem;">GEMMA SPORTS AI COACH</h3>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Real-time Tactical Match Telemetry Analysis</div>
+                </div>
+              </div>
+              <div class="gemma-status-pill">OLLAMA GEMMA READY</div>
+            </div>
+
+            <!-- Dynamic Streamed AI Analysis Terminal -->
+            <div id="gemma-terminal-text" class="gemma-output-terminal">
+              Analyzing shuttle flight aerodynamics, rally pacing, and player attack efficiency...
+              <span class="gemma-typing-indicator"></span>
+            </div>
+
+            <!-- Gemma Backend Configuration Bar -->
+            <div class="gemma-settings-bar">
+              <span style="color: var(--text-dim);">Backend: <code>http://localhost:11434</code> (Gemma 2)</span>
+              <button class="gemma-toggle-btn" onclick="window.SmashApp && window.SmashApp.triggerGemmaAnalysis(window.BadmintonStats.getSummary())">
+                🔄 Re-Analyze with Gemma
+              </button>
+            </div>
+          </div>
+
+          <!-- Match Statistics & Heatmap Breakdown -->
+          <div class="dash-card">
+            <div class="card-header">
+              <div class="card-title">📊 Match Performance Telemetry</div>
+              <span style="font-size: 0.8rem; color: var(--brand-green); font-weight: 700;">VS VIKTOR AI</span>
+            </div>
+
+            <div class="match-stats-breakdown">
+              <!-- Smashes -->
+              <div class="stat-comparison-row">
+                <div class="stat-labels">
+                  <span>Player Smashes: <strong id="stat-p-smashes" style="color: var(--brand-green);">0</strong></span>
+                  <span>AI: <strong id="stat-a-smashes" style="color: var(--brand-red);">0</strong></span>
+                </div>
+                <div class="stat-comparison-bar">
+                  <div id="bar-smashes-user" class="comp-bar-user" style="width: 50%;"></div>
+                  <div class="comp-bar-ai" style="flex: 1;"></div>
+                </div>
+              </div>
+
+              <!-- Top Smash Speed -->
+              <div class="stat-comparison-row">
+                <div class="stat-labels">
+                  <span>Peak Speed: <strong id="stat-p-speed" style="color: var(--brand-green);">0 km/h</strong></span>
+                  <span>AI: <strong id="stat-a-speed" style="color: var(--brand-red);">0 km/h</strong></span>
+                </div>
+              </div>
+
+              <!-- Drop Shots -->
+              <div class="stat-comparison-row">
+                <div class="stat-labels">
+                  <span>Deceptive Net Drops: <strong id="stat-p-drops" style="color: var(--brand-green);">0</strong></span>
+                  <span>AI: <strong id="stat-a-drops" style="color: var(--brand-red);">0</strong></span>
+                </div>
+              </div>
+
+              <!-- Average Rally Length -->
+              <div class="stat-comparison-row">
+                <div class="stat-labels">
+                  <span>Average Rally Length:</span>
+                  <strong id="stat-avg-rally" style="color: var(--brand-blue);">0 shots</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Court Landing Heatmap -->
+            <div class="court-heatmap-card">
+              <div style="font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">
+                Shuttle Landing Heatmap (Green = You, Red = AI)
+              </div>
+              <div class="heatmap-canvas-box">
+                <canvas id="court-heatmap-canvas" width="320" height="180"></canvas>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+              <button id="btn-rematch" class="btn-primary" style="flex: 1; padding: 0.85rem 1rem; font-size: 1rem; justify-content: center;">
+                🏸 REMATCH
+              </button>
+              <button id="btn-back-dashboard" class="btn-secondary" style="flex: 1; padding: 0.85rem 1rem; font-size: 1rem; justify-content: center;">
+                🏆 TOURNAMENT HUB
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+
+    <!-- ====================================================================
+         VIEW 4: GESTURE CALIBRATION & PRACTICE COURT
+         ==================================================================== -->
+    <main id="view-practice" class="view-screen">
+      <div class="dashboard-content">
+        <section class="hero-match-banner" style="padding: 2.5rem;">
+          <div>
+            <div class="hero-tag">🎯 CALIBRATION & PRACTICE LAB</div>
+            <h2 style="font-family: var(--font-display); font-size: 2.5rem; font-weight: 800; margin-bottom: 0.75rem;">
+              TUNE YOUR SWINGS & GESTURES
+            </h2>
+            <p style="color: var(--text-muted); line-height: 1.6; max-width: 600px; margin-bottom: 1.5rem;">
+              Position your webcam so your upper torso and swinging hand are clearly visible. Practice high clears, downward smashes, and soft drops. Your gesture friend can monitor coordinates in the developer console.
+            </p>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+              <button class="btn-primary" onclick="window.SmashApp && window.SmashApp.startNewMatch()">
+                ⚡ ENTER REAL MATCH
+              </button>
+              <button class="btn-secondary" onclick="window.BadmintonGestureBridge && window.BadmintonGestureBridge.triggerShot('smash')">
+                🔥 Test Smash Event
+              </button>
+              <button class="btn-secondary" onclick="window.BadmintonGestureBridge && window.BadmintonGestureBridge.triggerShot('drop')">
+                🏸 Test Drop Event
+              </button>
+            </div>
+          </div>
+          <div style="background: #000; border-radius: 18px; padding: 1.5rem; border: 1px solid rgba(0, 230, 118, 0.3);">
+            <h4 style="font-family: var(--font-display); color: var(--brand-green); margin-bottom: 0.5rem;">HAND CV BRIDGE LOG</h4>
+            <div style="font-size: 0.8rem; color: #a5f3fc; font-family: monospace; line-height: 1.7;">
+              ✓ window.BadmintonGestureBridge: READY<br>
+              ✓ Event: 'badminton-gesture-move' (x, y)<br>
+              ✓ Event: 'badminton-gesture-shot' (type)<br>
+              ✓ Audio Synthesizer: 48kHz Web Audio<br>
+              ✓ Ollama Gemma Endpoint: /api/generate
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- ====================================================================
+         SETTINGS MODAL
+         ==================================================================== -->
+    <div id="settings-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>⚙️ Match & AI Settings</h2>
+          <button id="btn-close-settings" class="modal-close-btn">&times;</button>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <h4>Match Target Points</h4>
+            <p>Official sets to 11 or 21 points</p>
+          </div>
+          <select id="setting-target-score" class="app-select">
+            <option value="11">11 Points (Quick Match)</option>
+            <option value="21">21 Points (Championship Set)</option>
+          </select>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <h4>Opponent Difficulty</h4>
+            <p>AI reaction time & tactical smash rate</p>
+          </div>
+          <select id="setting-difficulty" class="app-select">
+            <option value="rookie">Rookie (Beginner)</option>
+            <option value="pro" selected>Pro (BWF Contender)</option>
+            <option value="legend">Legend (World Champion)</option>
+          </select>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <h4>Court Visual Theme</h4>
+            <p>Color styling of court mat and lines</p>
+          </div>
+          <select id="setting-theme" class="app-select">
+            <option value="bwf-green" selected>BWF Emerald Green Mat</option>
+            <option value="neon-cyber">Neon Cyber Arena</option>
+            <option value="wooden-classic">Classic Indoor Timber</option>
+          </select>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <h4>Ollama Backend URL</h4>
+            <p>For your friend's local or hosted Ollama</p>
+          </div>
+          <input type="text" id="setting-ollama-url" class="app-input" value="http://localhost:11434" style="width: 200px;">
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <h4>Ollama Model Name</h4>
+            <p>Default: gemma2, gemma:2b, or gemma:7b</p>
+          </div>
+          <input type="text" id="setting-ollama-model" class="app-input" value="gemma2" style="width: 200px;">
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button id="btn-save-settings" class="btn-primary" style="padding: 0.6rem 1.5rem; font-size: 0.95rem;">
+            Save Settings
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Application Scripts -->
+  <script src="js/audio.js"></script>
+  <script src="js/game/court.js"></script>
+  <script src="js/game/shuttlecock.js"></script>
+  <script src="js/game/racket.js"></script>
+  <script src="js/game/ai.js"></script>
+  <script src="js/game/engine.js"></script>
+  <script src="js/gestures/gestureBridge.js"></script>
+  <script src="js/analytics/stats.js"></script>
+  <script src="js/analytics/gemmaClient.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
+

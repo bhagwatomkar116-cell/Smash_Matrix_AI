@@ -187,7 +187,7 @@ class BadmintonApp {
       link.classList.toggle('active', match);
     });
 
-    if (viewName === 'arena' && this.engine) {
+    if (viewName === 'arena') {
       setTimeout(() => {
         window.dispatchEvent(new Event('resize'));
       }, 50);
@@ -197,14 +197,18 @@ class BadmintonApp {
   startNewMatch() {
     this.switchView('arena');
 
-    if (!this.engine) {
-      this.engine = new BadmintonEngine('three-canvas-container');
-    }
+    // Defer engine init by one rAF so the DOM reflows to block display
+    // and clientWidth/Height are available before Three.js renderer is sized.
+    requestAnimationFrame(() => {
+      if (!this.engine) {
+        this.engine = new BadmintonEngine('three-canvas-container');
+      }
 
-    this.engine.startMatch({
-      targetScore: parseInt(this.settings.targetScore) || 11,
-      difficulty: this.settings.difficulty,
-      theme: this.settings.theme
+      this.engine.startMatch({
+        targetScore: parseInt(this.settings.targetScore) || 11,
+        difficulty: this.settings.difficulty,
+        theme: this.settings.theme
+      });
     });
   }
 

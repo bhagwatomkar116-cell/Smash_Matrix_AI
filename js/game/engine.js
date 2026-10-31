@@ -162,6 +162,10 @@ class BadmintonEngine {
   }
 
   startMatch(options = {}) {
+    clearTimeout(this.serveTimer);
+    clearTimeout(this.aiServeTimer);
+    clearTimeout(this.matchEndTimer);
+
     this.targetScore = options.targetScore || 11;
     this.playerScore = 0;
     this.aiScore = 0;
@@ -184,6 +188,9 @@ class BadmintonEngine {
   }
 
   prepareServe() {
+    clearTimeout(this.serveTimer);
+    clearTimeout(this.aiServeTimer);
+
     this.state = 'serving';
     this.rallyShots = 0;
 
@@ -202,7 +209,7 @@ class BadmintonEngine {
       this.shuttle.reset(-serveX, 1.2, -4.4);
       this.showShotCallout('VIKTOR AI SERVING...', 'clear');
 
-      setTimeout(() => {
+      this.aiServeTimer = setTimeout(() => {
         if (this.state === 'serving' && this.currentServer === 'ai') {
           this.executeAIServe();
         }
@@ -264,15 +271,35 @@ class BadmintonEngine {
     if (this.state !== 'playing') return;
 
     const sPos = this.shuttle.position;
+    const prevZ = this.shuttle.prevPosition ? this.shuttle.prevPosition.z : sPos.z;
+    const currZ = sPos.z;
 
-    // 1. Net Collision
-    if (Math.abs(sPos.z) < 0.12 && sPos.y < this.court.netTopY) {
+    // 1. Continuous Net Collision Check across Z = 0
+    const crossedNet = (prevZ > 0.05 && currZ <= 0.05) || (prevZ < -0.05 && currZ >= -0.05);
+    if (crossedNet) {
+      const frac = (0 - prevZ) / (currZ - prevZ);
+      const prevY = this.shuttle.prevPosition ? this.shuttle.prevPosition.y : sPos.y;
+      const yAtNet = prevY + frac * (sPos.y - prevY);
+
+      if (yAtNet < this.court.netTopY) {
+        if (window.BadmintonAudio) window.BadmintonAudio.playDrop();
+        this.shuttle.velocity.z *= -0.2;
+        this.shuttle.velocity.y *= 0.4;
+
+        const faultPlayer = (this.shuttle.lastHitter === 'player') ? 'player' : 'ai';
+        this.awardPoint(faultPlayer === 'player' ? 'ai' : 'player', 'NET FAULT');
+        return;
+      }
+    }
+
+    // Proximity Net Check (soft net clip — only fires when CCD did NOT already handle it)
+    if (!crossedNet && Math.abs(sPos.z) < 0.10 && sPos.y < this.court.netTopY) {
       if (window.BadmintonAudio) window.BadmintonAudio.playDrop();
       this.shuttle.velocity.z *= -0.2;
       this.shuttle.velocity.y *= 0.4;
 
       const faultPlayer = (this.shuttle.lastHitter === 'player') ? 'player' : 'ai';
-      this.awardPoint(faultPlayer === 'player' ? 'ai' : 'player', 'NET FAULT');
+      this.awardPoint(faultPlayer === 'player' ? 'ai' : 'player', 'NET CLIP');
       return;
     }
 
@@ -332,7 +359,8 @@ class BadmintonEngine {
       return;
     }
 
-    setTimeout(() => {
+    clearTimeout(this.serveTimer);
+    this.serveTimer = setTimeout(() => {
       this.prepareServe();
     }, 1800);
   }
@@ -353,7 +381,8 @@ class BadmintonEngine {
         window.BadmintonStats.finalizeMatch(winner, this.playerScore, this.aiScore);
       }
 
-      setTimeout(() => {
+      clearTimeout(this.matchEndTimer);
+      this.matchEndTimer = setTimeout(() => {
         if (window.SmashApp) {
           window.SmashApp.showPostMatchAnalytics(winner, this.playerScore, this.aiScore);
         }

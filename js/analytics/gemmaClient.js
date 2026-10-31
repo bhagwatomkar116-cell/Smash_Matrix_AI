@@ -34,6 +34,9 @@ class GemmaCoachClient {
     // 2. Try fetching from local Ollama Gemma backend
     if (this.useLiveBackend) {
       try {
+        const controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        const timeoutId = controller ? setTimeout(() => controller.abort(), 5000) : null;
+
         const response = await fetch(`${this.ollamaUrl}/api/generate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -46,8 +49,10 @@ class GemmaCoachClient {
               top_p: 0.9
             }
           }),
-          signal: AbortSignal.timeout(6000) // timeout after 6s if Ollama not running
+          signal: controller ? controller.signal : undefined
         });
+
+        if (timeoutId) clearTimeout(timeoutId);
 
         if (!response.ok) {
           throw new Error(`HTTP error ${response.status}`);

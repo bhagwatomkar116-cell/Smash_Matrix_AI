@@ -217,6 +217,10 @@ class Shuttlecock {
   update(dt) {
     if (!this.active) return;
 
+    // Track previous position for Continuous Collision Detection across net
+    if (!this.prevPosition) this.prevPosition = this.position.clone();
+    else this.prevPosition.copy(this.position);
+
     const delta = Math.min(dt, 0.035);
 
     // 1. Aerodynamic Drag

@@ -28,15 +28,15 @@ class GestureBridge {
     this.CONNECTIONS = [
       // Thumb
       [0, 1], [1, 2], [2, 3], [3, 4],
-      // Index
+      // Index finger (wrist → MCP → PIP → DIP → tip)
       [0, 5], [5, 6], [6, 7], [7, 8],
-      // Middle
-      [9, 10], [10, 11], [11, 12],
-      // Ring
-      [13, 14], [14, 15], [15, 16],
+      // Middle finger (wrist → MCP → PIP → DIP → tip)
+      [0, 9], [9, 10], [10, 11], [11, 12],
+      // Ring finger (wrist → MCP → PIP → DIP → tip)
+      [0, 13], [13, 14], [14, 15], [15, 16],
       // Pinky
       [0, 17], [17, 18], [18, 19], [19, 20],
-      // Palm Base / Knuckle Cross-Web
+      // Knuckle Cross-Web (MCP arch across all fingers)
       [5, 9], [9, 13], [13, 17]
     ];
 
@@ -93,26 +93,35 @@ class GestureBridge {
 
       this.stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      // Bind stream to video elements
+      // Create continuous offscreen worker video so view switches (display:none) never interrupt processing
+      if (!this.workerVideo) {
+        this.workerVideo = document.createElement('video');
+        this.workerVideo.playsInline = true;
+        this.workerVideo.muted = true;
+        this.workerVideo.autoplay = true;
+        this.workerVideo.style.display = 'none';
+        document.body.appendChild(this.workerVideo);
+      }
+      this.workerVideo.srcObject = this.stream;
+      await this.workerVideo.play().catch(e => console.warn(e));
+
+      // Also mirror stream to UI preview video elements
       this.videoElements.forEach(vid => {
         vid.srcObject = this.stream;
         vid.play().catch(e => console.warn(e));
       });
 
-      // Use the primary video element for camera loop
-      const primaryVideo = this.pipVideo || this.diagVideo;
-      if (primaryVideo) {
-        this.cameraInstance = new window.Camera(primaryVideo, {
-          onFrame: async () => {
-            if (this.isActive && primaryVideo && this.handsInstance) {
-              await this.handsInstance.send({ image: primaryVideo });
-            }
-          },
-          width: 640,
-          height: 480
-        });
-        await this.cameraInstance.start();
-      }
+      // Camera instance feeds from persistent worker video
+      this.cameraInstance = new window.Camera(this.workerVideo, {
+        onFrame: async () => {
+          if (this.isActive && this.workerVideo && this.handsInstance) {
+            await this.handsInstance.send({ image: this.workerVideo });
+          }
+        },
+        width: 640,
+        height: 480
+      });
+      await this.cameraInstance.start();
 
       this.isActive = true;
       this.updateStatusUI(true, 'Tracking 21 Nodes');
@@ -146,6 +155,9 @@ class GestureBridge {
     if (this.stream) {
       this.stream.getTracks().forEach(t => t.stop());
       this.stream = null;
+    }
+    if (this.workerVideo) {
+      this.workerVideo.srcObject = null;
     }
     this.videoElements.forEach(vid => {
       vid.srcObject = null;

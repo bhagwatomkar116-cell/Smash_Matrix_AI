@@ -1,6 +1,5 @@
 /**
- * Smash Pro - Main Application Orchestrator
- * View navigation, Leaderboard progression, Modals, and Game Loop bindings
+ * Smash Pro — Tournament Hub Orchestrator & State Manager
  */
 
 class BadmintonApp {
@@ -15,11 +14,11 @@ class BadmintonApp {
       ollamaModel: 'gemma2'
     };
 
-    // User Profile state with localStorage persistence
+    // User Career Telemetry
     this.user = {
       name: 'Player',
-      country: '🇮🇳 IND',
-      rankTitle: 'Diamond II',
+      country: 'IND',
+      rankTitle: 'DIAMOND II',
       rp: 1840,
       level: 14,
       xp: 680,
@@ -30,14 +29,14 @@ class BadmintonApp {
     };
 
     this.leaderboard = [
-      { rank: 1, name: 'Viktor Axelsen', flag: '🇩🇰', country: 'DEN', rp: 2980, winRate: '88%', form: 'WWWWW' },
-      { rank: 2, name: 'Shi Yuqi', flag: '🇨🇳', country: 'CHN', rp: 2820, winRate: '84%', form: 'WWLWW' },
-      { rank: 3, name: 'Kunlavut Vitidsarn', flag: '🇹🇭', country: 'THA', rp: 2650, winRate: '81%', form: 'LWWWW' },
-      { rank: 4, name: 'You (Player)', flag: '🇮🇳', country: 'IND', rp: 1840, winRate: '75%', form: 'WWLWW', isUser: true },
-      { rank: 5, name: 'Lee Zii Jia', flag: '🇲🇾', country: 'MAS', rp: 1790, winRate: '73%', form: 'WLWWL' },
-      { rank: 6, name: 'Kodai Naraoka', flag: '🇯🇵', country: 'JPN', rp: 1640, winRate: '71%', form: 'WWLLW' },
-      { rank: 7, name: 'Anthony Ginting', flag: '🇮🇩', country: 'INA', rp: 1590, winRate: '69%', form: 'LWLWW' },
-      { rank: 8, name: 'Loh Kean Yew', flag: '🇸🇬', country: 'SGP', rp: 1510, winRate: '67%', form: 'WLLWW' }
+      { rank: 1, name: 'Viktor Axelsen', country: 'DEN', rp: 2980, winRate: '88%', form: 'WWWWW' },
+      { rank: 2, name: 'Shi Yuqi', country: 'CHN', rp: 2820, winRate: '84%', form: 'WWLWW' },
+      { rank: 3, name: 'Kunlavut Vitidsarn', country: 'THA', rp: 2650, winRate: '81%', form: 'LWWWW' },
+      { rank: 4, name: 'You (Player)', country: 'IND', rp: 1840, winRate: '75%', form: 'WWLWW', isUser: true },
+      { rank: 5, name: 'Lee Zii Jia', country: 'MAS', rp: 1790, winRate: '73%', form: 'WLWWL' },
+      { rank: 6, name: 'Kodai Naraoka', country: 'JPN', rp: 1640, winRate: '71%', form: 'WWLLW' },
+      { rank: 7, name: 'Anthony Ginting', country: 'INA', rp: 1590, winRate: '69%', form: 'LWLWW' },
+      { rank: 8, name: 'Loh Kean Yew', country: 'SGP', rp: 1510, winRate: '67%', form: 'WLLWW' }
     ];
 
     this.loadUserData();
@@ -75,12 +74,12 @@ class BadmintonApp {
 
   initGestureBridge() {
     if (window.BadmintonGestureBridge) {
-      window.BadmintonGestureBridge.init('pip-webcam-video', 'pip-hand-canvas');
+      window.BadmintonGestureBridge.init();
     }
   }
 
   bindButtons() {
-    // Navigation Links
+    // Top Nav buttons
     document.querySelectorAll('[data-view-target]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const target = e.currentTarget.getAttribute('data-view-target');
@@ -89,7 +88,7 @@ class BadmintonApp {
       });
     });
 
-    // Start Play Match CTA
+    // Start match action
     const btnPlay = document.getElementById('btn-play-match');
     if (btnPlay) {
       btnPlay.addEventListener('click', () => {
@@ -97,21 +96,20 @@ class BadmintonApp {
       });
     }
 
-    // Sound toggle button
+    // Audio toggle
     const btnSound = document.getElementById('nav-sound-toggle');
     if (btnSound) {
       btnSound.addEventListener('click', () => {
         if (window.BadmintonAudio) {
           const isMuted = window.BadmintonAudio.toggleMute();
           btnSound.classList.toggle('active', !isMuted);
-          btnSound.innerHTML = isMuted 
-            ? '<i class="lucide-volume-x"></i> <span>Muted</span>'
-            : '<i class="lucide-volume-2"></i> <span>Audio ON</span>';
+          const lbl = btnSound.querySelector('.btn-label');
+          if (lbl) lbl.innerText = isMuted ? 'AUDIO OFF' : 'AUDIO ON';
         }
       });
     }
 
-    // Webcam gesture toggle button
+    // MediaPipe Hand Tracker Webcam Toggle
     const btnGesture = document.getElementById('nav-gesture-toggle');
     if (btnGesture) {
       btnGesture.addEventListener('click', async () => {
@@ -121,7 +119,7 @@ class BadmintonApp {
       });
     }
 
-    // Camera view buttons
+    // Camera Switcher
     document.querySelectorAll('[data-camera-mode]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const mode = e.currentTarget.getAttribute('data-camera-mode');
@@ -132,7 +130,7 @@ class BadmintonApp {
       });
     });
 
-    // Settings Modal toggles
+    // Settings Modal
     const modalSettings = document.getElementById('settings-modal');
     const openSettingsBtn = document.getElementById('btn-open-settings');
     const closeSettingsBtn = document.getElementById('btn-close-settings');
@@ -158,7 +156,7 @@ class BadmintonApp {
       });
     }
 
-    // Post-Match Actions
+    // Post-Match Action Buttons
     const btnRematch = document.getElementById('btn-rematch');
     if (btnRematch) {
       btnRematch.addEventListener('click', () => {
@@ -184,13 +182,11 @@ class BadmintonApp {
       activeEl.classList.add('active');
     }
 
-    // Update active nav link
-    document.querySelectorAll('.nav-link').forEach(link => {
+    document.querySelectorAll('.nav-item').forEach(link => {
       const match = link.getAttribute('data-view-target') === viewName;
       link.classList.toggle('active', match);
     });
 
-    // Trigger engine resize if entering arena
     if (viewName === 'arena' && this.engine) {
       setTimeout(() => {
         window.dispatchEvent(new Event('resize'));
@@ -215,7 +211,6 @@ class BadmintonApp {
   showPostMatchAnalytics(winner, pScore, aScore) {
     this.switchView('analytics');
 
-    // Update user rank stats
     const isPlayerWin = (winner === 'player');
     if (isPlayerWin) {
       this.user.wins++;
@@ -239,33 +234,28 @@ class BadmintonApp {
     this.renderUserProfile();
     this.renderLeaderboard();
 
-    // Victory Banner
+    // Summary Banner
     const victoryTitle = document.getElementById('analytics-victory-title');
     const victoryScore = document.getElementById('analytics-victory-score');
     if (victoryTitle) {
-      victoryTitle.innerText = isPlayerWin ? 'VICTORY! MATCH WON' : 'DEFEAT - GOOD FIGHT';
-      victoryTitle.className = isPlayerWin ? 'victory-title' : 'victory-title defeat';
+      victoryTitle.innerText = isPlayerWin ? 'VICTORY' : 'DEFEAT';
+      victoryTitle.className = isPlayerWin ? 'summary-outcome' : 'summary-outcome defeat';
     }
     if (victoryScore) {
-      victoryScore.innerText = `YOU ${pScore} — ${aScore} AI OPPONENT`;
+      victoryScore.innerText = `YOU ${pScore} — ${aScore} VIKTOR AI`;
     }
 
-    // Confetti on win
     if (isPlayerWin && window.confetti) {
-      window.confetti({
-        particleCount: 120,
-        spread: 80,
-        origin: { y: 0.6 }
-      });
+      window.confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
     }
 
-    // Update Match Statistics Bars
+    // Match Stats Telemetry
     if (window.BadmintonStats) {
       const summary = window.BadmintonStats.getSummary();
       this.renderMatchStats(summary);
       window.BadmintonStats.drawHeatmap('court-heatmap-canvas');
 
-      // Trigger Gemma AI Coach Generation
+      // Trigger Gemma AI Analysis
       this.triggerGemmaAnalysis(summary);
     }
   }
@@ -287,7 +277,6 @@ class BadmintonApp {
     setText('stat-a-drops', a.drops);
     setText('stat-avg-rally', `${summary.averageRallyShots} shots`);
 
-    // Width percentages for bars
     const totalSmashes = Math.max(1, p.smashes + a.smashes);
     const smashBar = document.getElementById('bar-smashes-user');
     if (smashBar) smashBar.style.width = `${(p.smashes / totalSmashes) * 100}%`;
@@ -297,7 +286,7 @@ class BadmintonApp {
     const terminal = document.getElementById('gemma-terminal-text');
     if (!terminal) return;
 
-    terminal.innerHTML = 'Connecting to Gemma Sports AI Engine... <span class="gemma-typing-indicator"></span>';
+    terminal.innerHTML = 'Executing Gemma 2 tactical sports telemetry parser... <span class="terminal-cursor"></span>';
 
     if (window.GemmaCoach) {
       await window.GemmaCoach.generateMatchAnalysis(summary, (chunk) => {
@@ -317,15 +306,22 @@ class BadmintonApp {
     const elXpFill = document.getElementById('user-profile-xp-fill');
     const elXpText = document.getElementById('user-profile-xp-text');
 
+    const h2hRp = document.getElementById('h2h-user-rp');
+    const h2hWinrate = document.getElementById('h2h-user-winrate');
+    const h2hName = document.getElementById('h2h-user-name');
+
     if (elName) elName.innerText = this.user.name;
+    if (h2hName) h2hName.innerText = this.user.name.toUpperCase();
     if (elRank) elRank.innerText = this.user.rankTitle;
-    if (elRp) elRp.innerText = `${this.user.rp} RP`;
+    if (elRp) elRp.innerText = this.user.rp.toLocaleString();
+    if (h2hRp) h2hRp.innerText = this.user.rp.toLocaleString();
     if (elWins) elWins.innerText = this.user.wins;
     if (elLosses) elLosses.innerText = this.user.losses;
 
     const totalGames = this.user.wins + this.user.losses;
     const rate = totalGames ? Math.round((this.user.wins / totalGames) * 100) : 0;
     if (elRate) elRate.innerText = `${rate}%`;
+    if (h2hWinrate) h2hWinrate.innerText = `${rate}%`;
 
     if (elLevel) elLevel.innerText = `LVL ${this.user.level}`;
     if (elXpFill) elXpFill.style.width = `${(this.user.xp / this.user.maxXp) * 100}%`;
@@ -333,31 +329,38 @@ class BadmintonApp {
   }
 
   renderLeaderboard() {
-    const list = document.getElementById('leaderboard-items');
-    if (!list) return;
+    const tbody = document.getElementById('leaderboard-items');
+    if (!tbody) return;
 
-    // Update user row in leaderboard array
     const userRow = this.leaderboard.find(r => r.isUser);
     if (userRow) {
       userRow.rp = this.user.rp;
     }
 
-    // Sort descending by RP
     this.leaderboard.sort((a, b) => b.rp - a.rp);
     this.leaderboard.forEach((item, idx) => item.rank = idx + 1);
 
-    list.innerHTML = this.leaderboard.map(item => `
-      <div class="ranking-item ${item.isUser ? 'current-user' : ''}">
-        <div class="rank-position">#${item.rank}</div>
-        <div class="rank-player">
-          <span class="flag">${item.flag}</span>
-          <div class="player-text">
-            <div class="name">${item.name}</div>
-            <div class="subtext">${item.country} • Win Rate ${item.winRate}</div>
+    tbody.innerHTML = this.leaderboard.map(item => `
+      <tr class="${item.isUser ? 'active-user-row' : ''}">
+        <td class="pos-cell pos-${item.rank}">${item.rank}</td>
+        <td>
+          <div class="player-info-cell">
+            <span class="flag-icon">${item.country}</span>
+            <span style="font-weight: 600;">${item.name}</span>
           </div>
-        </div>
-        <div class="rank-points">${item.rp.toLocaleString()} RP</div>
-      </div>
+        </td>
+        <td style="text-align: right; font-family: var(--font-mono); font-weight: 700; color: var(--accent-cyan);">
+          ${item.rp.toLocaleString()}
+        </td>
+        <td style="text-align: right; font-family: var(--font-mono); color: var(--text-secondary);">
+          ${item.winRate}
+        </td>
+        <td style="text-align: right;">
+          <span class="form-streak">
+            ${item.form.split('').map(f => `<span class="${f === 'W' ? 'form-w' : 'form-l'}">${f}</span>`).join('')}
+          </span>
+        </td>
+      </tr>
     `).join('');
   }
 
@@ -396,8 +399,6 @@ class BadmintonApp {
   }
 }
 
-// Bootstrap on DOM Load
 window.addEventListener('DOMContentLoaded', () => {
   window.appInstance = new BadmintonApp();
 });
-

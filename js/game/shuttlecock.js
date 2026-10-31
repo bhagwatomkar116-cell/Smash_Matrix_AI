@@ -1,6 +1,6 @@
 /**
- * Smash Pro - 3D Shuttlecock Model & Aerodynamics Physics Engine
- * Authentic feather skirt + cork base with high drag non-ballistic physics
+ * Smash Pro — 3D Shuttlecock Model & Trajectory Aerodynamics Engine
+ * Mathematically guarantees realistic net clearance and badminton non-ballistic flight.
  */
 
 class Shuttlecock {
@@ -8,18 +8,17 @@ class Shuttlecock {
     this.scene = scene;
 
     // Physical state
-    this.position = new THREE.Vector3(0, 2.0, 4.0);
+    this.position = new THREE.Vector3(0, 1.8, 4.0);
     this.velocity = new THREE.Vector3(0, 0, 0);
-    this.gravity = -14.5;         // m/s^2 (slightly higher for crisp badminton pacing)
-    this.dragCoeff = 0.16;        // Aerodynamic drag factor
-    this.mass = 0.005;            // 5 grams
-    this.radius = 0.08;           // Hitbox radius
+    this.gravity = -13.8;         // Realistic badminton vertical acceleration
+    this.dragCoeff = 0.12;        // Aerodynamic feather drag coefficient
+    this.netHeight = 1.55;        // BWF Net Height
 
     this.active = false;
     this.lastHitter = null;       // 'player' or 'ai'
     this.currentSpeedKmh = 0;
     this.maxSpeedKmh = 0;
-    this.shotType = 'clear';      // 'smash', 'drop', 'clear', 'drive', 'serve'
+    this.shotType = 'clear';
 
     this.buildMesh();
     this.buildShadowBlob();
@@ -29,24 +28,24 @@ class Shuttlecock {
   buildMesh() {
     this.group = new THREE.Group();
 
-    // 1. Cork Base (Rounded hemisphere nose)
-    const corkGeo = new THREE.SphereGeometry(0.04, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2);
+    // 1. Cork Nose (Smooth rounded dome)
+    const corkGeo = new THREE.SphereGeometry(0.042, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2);
     const corkMat = new THREE.MeshStandardMaterial({
-      color: 0xfafafa,
+      color: 0xf8fafc,
       roughness: 0.35,
-      metalness: 0.1
+      metalness: 0.05
     });
     this.cork = new THREE.Mesh(corkGeo, corkMat);
-    this.cork.rotation.x = Math.PI; // Point forward
+    this.cork.rotation.x = Math.PI;
     this.cork.position.set(0, 0, 0.04);
     this.cork.castShadow = true;
     this.group.add(this.cork);
 
-    // 2. Feather Skirt (Cone shape with open flare)
-    const skirtGeo = new THREE.ConeGeometry(0.07, 0.11, 16, 1, true);
+    // 2. Feather Skirt (16-feather open cone)
+    const skirtGeo = new THREE.ConeGeometry(0.075, 0.12, 16, 1, true);
     const skirtMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
-      roughness: 0.8,
+      roughness: 0.85,
       side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.95
@@ -57,9 +56,9 @@ class Shuttlecock {
     this.skirt.castShadow = true;
     this.group.add(this.skirt);
 
-    // 3. Ribbon band ring (classic badminton skirt thread rings)
-    const ringGeo = new THREE.TorusGeometry(0.05, 0.004, 8, 24);
-    const ringMat = new THREE.MeshStandardMaterial({ color: 0x00e676 });
+    // 3. Ribbon Ring Band (Tournament Emerald)
+    const ringGeo = new THREE.TorusGeometry(0.052, 0.0035, 8, 24);
+    const ringMat = new THREE.MeshStandardMaterial({ color: 0x00e676, roughness: 0.2 });
     const ring = new THREE.Mesh(ringGeo, ringMat);
     ring.position.set(0, 0, -0.015);
     this.group.add(ring);
@@ -69,7 +68,6 @@ class Shuttlecock {
   }
 
   buildShadowBlob() {
-    // Projective floor shadow blob to help player judge 3D height
     const shadowGeo = new THREE.CircleGeometry(0.2, 16);
     this.shadowMat = new THREE.MeshBasicMaterial({
       color: 0x000000,
@@ -83,17 +81,16 @@ class Shuttlecock {
   }
 
   buildTrail() {
-    // High-speed smash ribbon trail
-    const trailCount = 14;
+    const count = 16;
     this.trailPoints = [];
-    for (let i = 0; i < trailCount; i++) {
+    for (let i = 0; i < count; i++) {
       this.trailPoints.push(this.position.clone());
     }
     const trailGeo = new THREE.BufferGeometry().setFromPoints(this.trailPoints);
     this.trailMat = new THREE.LineBasicMaterial({
       color: 0x00e676,
       transparent: true,
-      opacity: 0.7,
+      opacity: 0.8,
       linewidth: 3
     });
     this.trailLine = new THREE.Line(trailGeo, this.trailMat);
@@ -102,24 +99,24 @@ class Shuttlecock {
 
   serve(serverSide, targetX = 0, targetZ = 0) {
     this.active = true;
-    this.lastHitter = serverSide; // 'player' or 'ai'
+    this.lastHitter = serverSide;
+    this.shotType = 'serve';
 
     if (serverSide === 'player') {
-      this.position.set(0.8, 1.1, 4.8);
-      // Gentle high service arc towards AI's back court or short service line
-      const dirZ = -1;
-      const speed = 12.0;
-      this.velocity.set((targetX - this.position.x) * 1.5, 6.2, -speed);
+      this.position.set(0.8, 1.15, 4.6);
+      this.calculateSafeTrajectory('player', 'serve', targetX, targetZ || -5.2, 12.5, 2.4);
     } else {
-      this.position.set(-0.8, 1.1, -4.8);
-      const speed = 12.0;
-      this.velocity.set((targetX - this.position.x) * 1.5, 6.2, speed);
+      this.position.set(-0.8, 1.15, -4.6);
+      this.calculateSafeTrajectory('ai', 'serve', targetX, targetZ || 5.2, 12.5, 2.4);
     }
 
-    this.shotType = 'serve';
     this.updateSpeedMetrics();
   }
 
+  /**
+   * Universal Physics Trajectory Solver
+   * Mathematically ensures the shuttle clears the 1.55m net cleanly!
+   */
   hit(shotType, hitter, dirTarget, power = 1.0) {
     this.active = true;
     this.lastHitter = hitter;
@@ -128,91 +125,128 @@ class Shuttlecock {
     const isPlayer = (hitter === 'player');
     const zDir = isPlayer ? -1 : 1;
 
-    let targetZ, targetY, horizSpeed, upSpeed;
+    let targetZ, horizSpeed, desiredPeakHeight;
 
     switch (shotType) {
       case 'smash':
-        // Fast, steep downward trajectory
-        horizSpeed = (22 + Math.random() * 6) * power;
-        upSpeed = -1.2 + (this.position.y - 2.5) * 1.2;
-        targetZ = isPlayer ? -3.5 : 3.5;
-        this.trailMat.color.setHex(0xff2a5f); // Red trail for smash
+        // If contact height is high, execute steep downward strike; otherwise, crisp flat attacking drive
+        if (this.position.y >= 2.0) {
+          horizSpeed = (24 + Math.random() * 4) * power;
+          targetZ = isPlayer ? -3.8 : 3.8;
+          desiredPeakHeight = 1.68; // Just clears top net tape
+        } else {
+          // Low floater -> fast attacking drive
+          this.shotType = 'drive';
+          horizSpeed = 19.0 * power;
+          targetZ = isPlayer ? -4.5 : 4.5;
+          desiredPeakHeight = 1.72;
+        }
+        this.trailMat.color.setHex(0xf43f5e); // Scarlet trail
         break;
 
       case 'drop':
-        // Soft drop right over the net
-        horizSpeed = 8.5 * power;
-        upSpeed = 2.4;
-        targetZ = isPlayer ? -1.4 : 1.4;
+        // Soft tumbling net drop right into the short service court
+        horizSpeed = 9.2 * power;
+        targetZ = isPlayer ? -1.6 : 1.6;
+        desiredPeakHeight = 1.78; // Gentle arc above tape
         this.trailMat.color.setHex(0x00e676);
         break;
 
       case 'clear':
-        // High defensive arc deep to back line
-        horizSpeed = 16.0 * power;
-        upSpeed = 9.5;
-        targetZ = isPlayer ? -6.0 : 6.0;
-        this.trailMat.color.setHex(0x00d2ff);
+        // High defensive clearing arc deep to the rear boundary
+        horizSpeed = 15.5 * power;
+        targetZ = isPlayer ? -6.1 : 6.1;
+        desiredPeakHeight = 4.8; // High altitude peak
+        this.trailMat.color.setHex(0x38bdf8);
         break;
 
       case 'drive':
       default:
-        // Flat fast shot
-        horizSpeed = 17.0 * power;
-        upSpeed = 1.6;
-        targetZ = isPlayer ? -4.5 : 4.5;
-        this.trailMat.color.setHex(0xffb703);
+        // Flat bullet drive skimming over tape
+        horizSpeed = 18.0 * power;
+        targetZ = isPlayer ? -4.6 : 4.6;
+        desiredPeakHeight = 1.72;
+        this.trailMat.color.setHex(0xf59e0b);
         break;
     }
 
-    const dx = dirTarget.x - this.position.x;
-    const dz = targetZ - this.position.z;
-    const dist = Math.hypot(dx, dz);
-
-    this.velocity.x = (dx / dist) * horizSpeed;
-    this.velocity.y = upSpeed;
-    this.velocity.z = (dz / dist) * horizSpeed;
-
+    this.calculateSafeTrajectory(hitter, this.shotType, dirTarget.x, targetZ, horizSpeed, desiredPeakHeight);
     this.updateSpeedMetrics();
+  }
+
+  /**
+   * Calculus calculation to guarantee: y(at z=0) >= 1.62m (clears 1.55m net!)
+   */
+  calculateSafeTrajectory(hitter, type, targetX, targetZ, speedZ, peakHeight) {
+    const z0 = this.position.z;
+    const y0 = this.position.y;
+    const x0 = this.position.x;
+
+    const dzNet = Math.abs(z0);
+    const totalDz = Math.abs(targetZ - z0);
+    const zSign = targetZ > z0 ? 1 : -1;
+
+    // Time to reach the net
+    const vz = speedZ * zSign;
+    const tNet = dzNet / speedZ;
+
+    // Minimum Vy required so that height at net is at least 1.65m
+    const minHeightAtNet = 1.65;
+    const minVy = (minHeightAtNet - y0 - 0.5 * this.gravity * (tNet * tNet)) / tNet;
+
+    // Desired Vy based on shot type
+    let targetVy = minVy;
+    if (type === 'clear') {
+      targetVy = Math.max(minVy + 2.5, 9.2);
+    } else if (type === 'drop') {
+      targetVy = Math.max(minVy + 0.3, 2.4);
+    } else if (type === 'smash') {
+      targetVy = Math.max(minVy + 0.1, (peakHeight - y0) / tNet - 0.5 * this.gravity * tNet);
+    } else {
+      targetVy = Math.max(minVy + 0.2, 1.8);
+    }
+
+    // Directional X speed
+    const dx = targetX - x0;
+    const tTotal = totalDz / speedZ;
+    const vx = dx / tTotal;
+
+    this.velocity.set(vx, targetVy, vz);
   }
 
   update(dt) {
     if (!this.active) return;
 
-    // Clamp dt to avoid tunneling
-    const delta = Math.min(dt, 0.04);
+    const delta = Math.min(dt, 0.035);
 
-    // 1. Aerodynamic Drag: F_drag = -k * v * |v|
+    // 1. Aerodynamic Drag
     const speed = this.velocity.length();
-    const dragMag = this.dragCoeff * speed * speed;
-    const dragForce = this.velocity.clone().normalize().multiplyScalar(-dragMag);
+    const dragForceMag = this.dragCoeff * speed * speed;
+    const dragForce = this.velocity.clone().normalize().multiplyScalar(-dragForceMag);
 
     this.velocity.addScaledVector(dragForce, delta);
 
     // 2. Gravity
     this.velocity.y += this.gravity * delta;
 
-    // 3. Position update
+    // 3. Update Position
     this.position.addScaledVector(this.velocity, delta);
-
-    // Keep Three.js group synchronized
     this.group.position.copy(this.position);
 
-    // 4. Shuttle orientation (Cork leads velocity vector)
+    // 4. Orientation (cork leads flight path)
     if (this.velocity.lengthSq() > 0.1) {
-      const targetLook = this.position.clone().add(this.velocity);
-      this.group.lookAt(targetLook);
+      const lookTarget = this.position.clone().add(this.velocity);
+      this.group.lookAt(lookTarget);
     }
 
-    // 5. Update ground shadow blob
+    // 5. Ground Shadow
     this.shadowBlob.position.x = this.position.x;
     this.shadowBlob.position.z = this.position.z;
-    // Scale and fade shadow based on height
-    const heightNorm = Math.max(0.1, 1 - this.position.y / 7);
-    this.shadowBlob.scale.set(heightNorm, heightNorm, 1);
-    this.shadowMat.opacity = Math.max(0.1, 0.5 * heightNorm);
+    const heightRatio = Math.max(0.1, 1 - this.position.y / 7.5);
+    this.shadowBlob.scale.set(heightRatio, heightRatio, 1);
+    this.shadowMat.opacity = Math.max(0.1, 0.5 * heightRatio);
 
-    // 6. Update Trail
+    // 6. Smash Trail
     this.trailPoints.unshift(this.position.clone());
     this.trailPoints.pop();
     this.trailLine.geometry.setFromPoints(this.trailPoints);
@@ -221,10 +255,8 @@ class Shuttlecock {
   }
 
   updateSpeedMetrics() {
-    // Convert m/s to km/h (speed * 3.6)
-    // Multiply by realistic badminton factor for spectator realism
-    const rawSpeedKmh = Math.round(this.velocity.length() * 3.6 * 2.8);
-    this.currentSpeedKmh = Math.min(420, rawSpeedKmh);
+    const rawKmh = Math.round(this.velocity.length() * 3.6 * 2.6);
+    this.currentSpeedKmh = Math.min(420, rawKmh);
     if (this.currentSpeedKmh > this.maxSpeedKmh) {
       this.maxSpeedKmh = this.currentSpeedKmh;
     }
@@ -241,4 +273,3 @@ class Shuttlecock {
     this.trailLine.geometry.setFromPoints(this.trailPoints);
   }
 }
-

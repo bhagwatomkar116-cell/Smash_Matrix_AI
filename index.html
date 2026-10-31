@@ -3,221 +3,347 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SMASH PRO ✦ BWF Gesture Badminton & Gemma AI Arena</title>
+  <title>SMASH PRO — BWF Tournament Arena & Computer Vision Badminton</title>
   
-  <!-- Modern Sports Fonts -->
+  <!-- Precision Esports & Monospace Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Rajdhani:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Rajdhani:wght@600;700;800&display=swap" rel="stylesheet">
   
-  <!-- CSS Stylesheet -->
+  <!-- Application Stylesheet -->
   <link rel="stylesheet" href="css/style.css">
 
-  <!-- External Libraries (Three.js & Canvas Confetti) -->
+  <!-- Core Libraries: Three.js, Canvas Confetti -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <!-- Google MediaPipe Hands & Camera Utils for Real Skeletal Motion Tracking -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 </head>
 <body>
 
-  <!-- Ambient Stadium Glow Background -->
-  <div class="bg-ambient"></div>
+  <!-- Ambient Stadium Atmosphere -->
+  <div class="stadium-backdrop"></div>
 
-  <div class="app-container">
+  <div class="app-shell">
 
     <!-- ====================================================================
-         TOP NAVIGATION BAR
+         TOP APP BAR (TOURNAMENT CONTROL HEADER)
          ==================================================================== -->
-    <header class="navbar">
-      <div class="nav-brand">
-        <div class="brand-icon">🏸</div>
-        <span>SMASH<span class="highlight">PRO</span></span>
+    <header class="app-header">
+      <div class="header-left">
+        <div class="brand-mark">
+          <svg class="brand-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+          <div class="brand-text">
+            <span class="brand-primary">SMASH</span><span class="brand-accent">PRO</span>
+            <span class="brand-badge">BWF ESPORTS</span>
+          </div>
+        </div>
+
+        <nav class="header-nav">
+          <button class="nav-item active" data-view-target="dashboard">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+              <path d="M4 22h16"/>
+              <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+              <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+              <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+            </svg>
+            <span>Tournament Hub</span>
+          </button>
+          
+          <button class="nav-item" data-view-target="arena">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+            <span>Match Arena</span>
+          </button>
+          
+          <button class="nav-item" data-view-target="practice">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <circle cx="12" cy="12" r="6"/>
+              <circle cx="12" cy="12" r="2"/>
+            </svg>
+            <span>Gesture Calibration</span>
+          </button>
+          
+          <button class="nav-item" data-view-target="analytics">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 3v18h18"/>
+              <path d="m19 9-5 5-4-4-3 3"/>
+            </svg>
+            <span>Gemma AI Analysis</span>
+          </button>
+        </nav>
       </div>
 
-      <nav>
-        <ul class="nav-links">
-          <li><a class="nav-link active" data-view-target="dashboard">🏆 Tournament Hub</a></li>
-          <li><a class="nav-link" data-view-target="arena">⚡ Match Arena</a></li>
-          <li><a class="nav-link" data-view-target="practice">🎯 Gesture Practice</a></li>
-          <li><a class="nav-link" data-view-target="analytics">🤖 Gemma AI Coach</a></li>
-        </ul>
-      </nav>
-
-      <div class="nav-actions">
-        <!-- Audio Synthesizer Toggle -->
-        <button id="nav-sound-toggle" class="btn-icon-pill active" title="Toggle Sound">
-          <span>🔊 Audio ON</span>
+      <div class="header-right">
+        <!-- Audio Synthesizer Control -->
+        <button id="nav-sound-toggle" class="system-btn active" title="Toggle Synthesized Court Audio">
+          <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+          </svg>
+          <span class="btn-label">AUDIO ON</span>
         </button>
 
-        <!-- Webcam Hand Gesture Bridge Toggle -->
-        <button id="nav-gesture-toggle" class="btn-icon-pill" title="Toggle Webcam Gesture Tracking">
-          <span>📹 Hand Gestures</span>
+        <!-- MediaPipe Hand Tracker Toggle -->
+        <button id="nav-gesture-toggle" class="system-btn" title="Toggle Computer Vision Hand Tracking">
+          <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+            <circle cx="12" cy="13" r="3"/>
+          </svg>
+          <span class="btn-label">VISION CAM</span>
         </button>
 
-        <!-- Settings Modal Button -->
-        <button id="btn-open-settings" class="btn-icon-pill" title="Match Settings">
-          <span>⚙️ Settings</span>
+        <!-- Match Settings -->
+        <button id="btn-open-settings" class="system-btn" title="Match Settings">
+          <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          <span class="btn-label">SETTINGS</span>
         </button>
 
-        <!-- Player Level Badge -->
-        <div class="player-status-badge">
-          <div class="avatar-mini">IND</div>
-          <span id="user-profile-level" style="font-weight: 700; font-size: 0.85rem; color: var(--brand-green);">LVL 14</span>
+        <!-- Player Tier Tag -->
+        <div class="user-tier-pill">
+          <div class="tier-indicator"></div>
+          <span class="tier-country">IND</span>
+          <span id="user-profile-level" class="tier-level">LVL 14</span>
         </div>
       </div>
     </header>
 
     <!-- ====================================================================
-         VIEW 1: TOURNAMENT DASHBOARD (HACKTOBERFEST WINNER STYLE)
+         VIEW 1: TOURNAMENT HUB (ENGINEERED SPORTS PORTAL)
          ==================================================================== -->
     <main id="view-dashboard" class="view-screen active">
-      <div class="dashboard-content">
+      <div class="dashboard-viewport">
 
-        <!-- Hero Match Banner -->
-        <section class="hero-match-banner">
-          <div>
-            <div class="hero-tag">✦ BWF SUPER 1000 FINALS • HAND GESTURE POWERED ✦</div>
-            <h1 class="hero-title">DOMINATE THE <span class="accent-green">COURT</span> WITH YOUR HANDS</h1>
-            <p class="hero-subtitle">
-              Step into the 3D stadium. Perform smashes, drops, and clears with real-time hand motion or mouse, then get instant AI tactical coaching powered by Google Gemma.
-            </p>
-            <div class="hero-actions">
-              <button id="btn-play-match" class="btn-primary">
-                <span>🏸 PLAY TOURNAMENT MATCH</span>
-              </button>
-              <button class="btn-secondary" data-view-target="practice">
-                <span>🎯 PRACTICE GESTURES</span>
-              </button>
+        <!-- Tournament Hero / Tale of the Tape -->
+        <section class="h2h-match-card">
+          <div class="h2h-header">
+            <div class="h2h-series-badge">
+              <span class="badge-dot"></span>
+              <span>BWF WORLD TOUR SUPER 1000 FINALS</span>
             </div>
+            <div class="h2h-format">SINGLES • REGULATION SETS • AI OPPONENT</div>
           </div>
 
-          <!-- Quick Contender Preview Card -->
-          <div class="versus-showcase">
-            <div class="match-contender">
-              <div class="contender-avatar">🇮🇳</div>
-              <div class="contender-name">You (Player)</div>
-              <div class="contender-rank">Diamond II • 1,840 RP</div>
+          <div class="h2h-content">
+            <!-- Player Side -->
+            <div class="fighter-pane fighter-user">
+              <div class="fighter-tag">CONTENDER (YOU)</div>
+              <div class="fighter-name" id="h2h-user-name">PLAYER</div>
+              <div class="fighter-country">
+                <span class="flag-icon">IND</span>
+                <span>INDIA • BWF #4</span>
+              </div>
+              <div class="fighter-metrics">
+                <div class="metric-block">
+                  <span class="m-val" id="h2h-user-rp">1,840</span>
+                  <span class="m-lbl">RANK POINTS</span>
+                </div>
+                <div class="metric-block">
+                  <span class="m-val" id="h2h-user-winrate">75%</span>
+                  <span class="m-lbl">WIN RATE</span>
+                </div>
+                <div class="metric-block">
+                  <span class="m-val">348 <small>KM/H</small></span>
+                  <span class="m-lbl">PEAK SMASH</span>
+                </div>
+              </div>
             </div>
-            <div class="vs-badge">VS</div>
-            <div class="match-contender">
-              <div class="contender-avatar ai-opponent">🇩🇰</div>
-              <div class="contender-name">Viktor AI</div>
-              <div class="contender-rank">World Rank #1 • Legend</div>
+
+            <!-- Match Action Center -->
+            <div class="h2h-vs-center">
+              <div class="vs-emblem">VS</div>
+              <button id="btn-play-match" class="btn-play-action">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                <span>ENTER ARENA</span>
+              </button>
+              <div class="h2h-court-note">COURT 1 • TOKYO ARENA MAT</div>
+            </div>
+
+            <!-- Opponent Side -->
+            <div class="fighter-pane fighter-opponent">
+              <div class="fighter-tag tag-opponent">WORLD CHAMPION</div>
+              <div class="fighter-name">VIKTOR AI</div>
+              <div class="fighter-country">
+                <span class="flag-icon flag-den">DEN</span>
+                <span>DENMARK • BWF #1</span>
+              </div>
+              <div class="fighter-metrics">
+                <div class="metric-block">
+                  <span class="m-val">2,980</span>
+                  <span class="m-lbl">RANK POINTS</span>
+                </div>
+                <div class="metric-block">
+                  <span class="m-val">88%</span>
+                  <span class="m-lbl">WIN RATE</span>
+                </div>
+                <div class="metric-block">
+                  <span class="m-val">392 <small>KM/H</small></span>
+                  <span class="m-lbl">PEAK SMASH</span>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        <!-- 3-Column Tournament Grid -->
-        <div class="dashboard-grid">
+        <!-- Multi-Column Tournament Intelligence Grid -->
+        <div class="dashboard-columns">
 
-          <!-- 1. Player Profile & Progression Card -->
-          <div class="dash-card">
-            <div class="card-header">
-              <div class="card-title">👤 Player Career</div>
-              <span id="user-profile-rank" class="tier-badge">Diamond II</span>
+          <!-- 1. Player Profile & Telemetry Progress -->
+          <div class="surface-card">
+            <div class="card-title-bar">
+              <div class="card-heading">
+                <svg class="heading-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <span>Player Profile & Loadout</span>
+              </div>
+              <span id="user-profile-rank" class="rank-chip">DIAMOND II</span>
             </div>
 
-            <div class="profile-hero">
-              <div class="profile-avatar-large">🏸</div>
-              <div class="profile-info">
-                <h3 id="user-profile-name">Player</h3>
-                <p style="font-size: 0.8rem; color: var(--text-muted);">Yonex Astrox 100ZZ Equiped</p>
-              </div>
-            </div>
-
-            <div class="stat-progress-bar">
-              <div class="progress-labels">
-                <span>Level Progress</span>
-                <span id="user-profile-xp-text">680 / 1000 XP</span>
-              </div>
-              <div class="progress-track">
-                <div id="user-profile-xp-fill" class="progress-fill" style="width: 68%;"></div>
+            <div class="user-meta-strip">
+              <div class="meta-avatar">P</div>
+              <div class="meta-info">
+                <div class="meta-title" id="user-profile-name">Player</div>
+                <div class="meta-sub">Racket: Yonex Astrox 100ZZ (31 lbs)</div>
               </div>
             </div>
 
-            <div class="profile-stats-grid">
-              <div class="stat-tile">
-                <div id="user-profile-rp" class="stat-tile-val">1,840</div>
-                <div class="stat-tile-lbl">Ranking Points</div>
+            <!-- Level Progression -->
+            <div class="xp-gauge">
+              <div class="gauge-head">
+                <span class="gauge-label">PRO EXP PROGRESSION</span>
+                <span id="user-profile-xp-text" class="gauge-value">680 / 1000 XP</span>
               </div>
-              <div class="stat-tile">
-                <div id="user-profile-wins" class="stat-tile-val">28</div>
-                <div class="stat-tile-lbl">Victories</div>
-              </div>
-              <div class="stat-tile">
-                <div id="user-profile-winrate" class="stat-tile-val">75%</div>
-                <div class="stat-tile-lbl">Win Rate</div>
+              <div class="gauge-rail">
+                <div id="user-profile-xp-fill" class="gauge-fill" style="width: 68%;"></div>
               </div>
             </div>
 
-            <div style="font-size: 0.8rem; color: var(--text-dim); text-align: center; margin-top: 0.5rem;">
-              Winning matches grants +45 RP & XP progression!
+            <!-- Career Stats -->
+            <div class="stat-matrix">
+              <div class="matrix-cell">
+                <span class="cell-label">POINTS</span>
+                <span id="user-profile-rp" class="cell-number">1,840</span>
+              </div>
+              <div class="matrix-cell">
+                <span class="cell-label">WINS</span>
+                <span id="user-profile-wins" class="cell-number stat-green">28</span>
+              </div>
+              <div class="matrix-cell">
+                <span class="cell-label">LOSSES</span>
+                <span id="user-profile-losses" class="cell-number stat-red">9</span>
+              </div>
+              <div class="matrix-cell">
+                <span class="cell-label">RATE</span>
+                <span id="user-profile-winrate" class="cell-number stat-cyan">75%</span>
+              </div>
+            </div>
+
+            <div class="card-footer-note">
+              Official BWF ranking system: +45 RP per win, -15 RP per loss.
             </div>
           </div>
 
-          <!-- 2. BWF World Tour Global Ranking Leaderboard -->
-          <div class="dash-card">
-            <div class="card-header">
-              <div class="card-title">🌍 BWF World Rankings Leaderboard</div>
-              <span style="font-size: 0.75rem; color: var(--brand-green); font-weight: 700;">SEASON 2026 LIVE</span>
+          <!-- 2. BWF Official World Rankings Leaderboard -->
+          <div class="surface-card">
+            <div class="card-title-bar">
+              <div class="card-heading">
+                <svg class="heading-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                <span>BWF World Rankings</span>
+              </div>
+              <span class="live-status-pill">LIVE 2026</span>
             </div>
 
-            <div id="leaderboard-items" class="leaderboard-list">
-              <!-- Dynamically populated by app.js -->
+            <div class="table-container">
+              <table class="rank-table">
+                <thead>
+                  <tr>
+                    <th style="width: 44px;">#</th>
+                    <th>PLAYER</th>
+                    <th style="text-align: right;">POINTS</th>
+                    <th style="text-align: right;">WIN%</th>
+                    <th style="text-align: right;">FORM</th>
+                  </tr>
+                </thead>
+                <tbody id="leaderboard-items">
+                  <!-- Rendered dynamically by app.js -->
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <!-- 3. Gesture Engine & Calibration Preview -->
-          <div class="dash-card">
-            <div class="card-header">
-              <div class="card-title">🖐️ Hand Gesture Engine</div>
-              <span style="font-size: 0.75rem; color: var(--brand-blue); font-weight: 700;">CV BRIDGE</span>
+          <!-- 3. Computer Vision & Hand Mesh Tracking Diagnostics -->
+          <div class="surface-card">
+            <div class="card-title-bar">
+              <div class="card-heading">
+                <svg class="heading-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M2 12h20M12 2v20"/>
+                  <circle cx="12" cy="12" r="7"/>
+                </svg>
+                <span>Vision Tracking Diagnostics</span>
+              </div>
+              <span id="vision-diagnostic-chip" class="status-chip chip-ready">SKELETON READY</span>
             </div>
 
-            <div class="gesture-guide-card">
-              <div class="gesture-preview-box">
-                <div class="gesture-preview-placeholder">
-                  <div style="font-size: 1.8rem;">📹</div>
-                  <div>Webcam Gesture Feed Ready</div>
-                  <button class="btn-icon-pill" style="margin-top: 0.4rem;" onclick="window.BadmintonGestureBridge && window.BadmintonGestureBridge.startWebcam()">
-                    Enable Camera
-                  </button>
+            <!-- Diagnostics Preview Container -->
+            <div class="diag-preview-viewport">
+              <video id="diag-preview-video" class="diag-video" playsinline muted autoplay></video>
+              <canvas id="diag-preview-canvas" class="diag-canvas" width="360" height="200"></canvas>
+              
+              <div id="diag-placeholder" class="diag-placeholder-overlay">
+                <div class="placeholder-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                    <circle cx="12" cy="13" r="3"/>
+                  </svg>
                 </div>
+                <div class="placeholder-text">Camera Standby</div>
+                <button class="btn-diag-enable" onclick="window.BadmintonGestureBridge && window.BadmintonGestureBridge.startWebcam()">
+                  INITIALIZE 21-NODE MESH
+                </button>
               </div>
+            </div>
 
-              <div class="gesture-badges-grid">
-                <div class="gesture-pill">
-                  <div class="gesture-symbol">⬇️</div>
-                  <div>
-                    <div style="font-weight: 700;">Flick Down</div>
-                    <div style="color: var(--text-dim); font-size: 0.7rem;">Power Smash</div>
-                  </div>
-                </div>
-                <div class="gesture-pill">
-                  <div class="gesture-symbol">⬆️</div>
-                  <div>
-                    <div style="font-weight: 700;">Swipe Up</div>
-                    <div style="color: var(--text-dim); font-size: 0.7rem;">High Clear</div>
-                  </div>
-                </div>
-                <div class="gesture-pill">
-                  <div class="gesture-symbol">👆</div>
-                  <div>
-                    <div style="font-weight: 700;">Tap / Push</div>
-                    <div style="color: var(--text-dim); font-size: 0.7rem;">Net Drop Shot</div>
-                  </div>
-                </div>
-                <div class="gesture-pill">
-                  <div class="gesture-symbol">↔️</div>
-                  <div>
-                    <div style="font-weight: 700;">Hand Move</div>
-                    <div style="color: var(--text-dim); font-size: 0.7rem;">Court Positioning</div>
-                  </div>
-                </div>
+            <!-- Kinetic Gesture Map -->
+            <div class="gesture-map-grid">
+              <div class="gesture-spec">
+                <span class="spec-cmd">FLICK DOWN</span>
+                <span class="spec-action">Power Smash (>300 km/h)</span>
               </div>
+              <div class="gesture-spec">
+                <span class="spec-cmd">SWIPE UP</span>
+                <span class="spec-action">Deep Defensive Clear</span>
+              </div>
+              <div class="gesture-spec">
+                <span class="spec-cmd">SOFT PUSH</span>
+                <span class="spec-action">Tumbling Net Drop</span>
+              </div>
+              <div class="gesture-spec">
+                <span class="spec-cmd">PALM VECTOR</span>
+                <span class="spec-action">Horizontal Racket Tracking</span>
+              </div>
+            </div>
 
-              <div style="background: rgba(0, 230, 118, 0.08); border: 1px solid rgba(0, 230, 118, 0.2); border-radius: 10px; padding: 0.75rem; font-size: 0.75rem; color: var(--text-muted);">
-                💡 <strong>Gesture Friend Hook:</strong> Call <code>window.BadmintonGestureBridge.triggerShot('smash')</code> or <code>onHandPosition(x,y)</code> anytime!
-              </div>
+            <div class="bridge-status-bar">
+              <span class="mono-label">CV ENGINE:</span>
+              <span class="mono-val">MediaPipe Hands (21 Landmark Nodes)</span>
             </div>
           </div>
 
@@ -227,84 +353,108 @@
     </main>
 
     <!-- ====================================================================
-         VIEW 2: 3D MATCH ARENA (THREE.JS BADMINTON COURT)
+         VIEW 2: 3D ARENA VIEW (BADMINTON COURT WITH BROADCAST HUD)
          ==================================================================== -->
     <main id="view-arena" class="view-screen">
-      <div class="arena-view">
+      <div class="arena-viewport">
 
-        <!-- Three.js Canvas Mount Point -->
+        <!-- Three.js 3D WebGL Canvas -->
         <div id="three-canvas-container"></div>
 
-        <!-- In-Game HUD Overlay -->
-        <div class="arena-hud">
+        <!-- Professional BWF Match HUD Overlay -->
+        <div class="arena-broadcast-layer">
 
-          <!-- Top Official BWF Scoreboard -->
-          <div class="bwf-scoreboard">
-            <div class="scoreboard-match-info">
-              <span class="match-info-title">BWF FINALS</span>
-              <span class="match-set-tag">SET 1</span>
+          <!-- Official BWF Top Scoreboard Strip -->
+          <div class="broadcast-scoreboard">
+            <div class="scoreboard-flag-tag">
+              <span class="series-title">BWF FINALS</span>
+              <span class="court-id">COURT 1</span>
             </div>
 
-            <!-- Player 1 (User) -->
-            <div class="scoreboard-player-row">
-              <span class="sc-player-flag">🇮🇳</span>
-              <span class="sc-player-name">YOU</span>
-              <span id="sc-player-dot" class="service-dot active" title="Serving"></span>
-              <div id="sc-player-score" class="sc-score-box">0</div>
+            <!-- Player 1 (You) -->
+            <div class="sc-competitor sc-player">
+              <span class="sc-flag">IND</span>
+              <span class="sc-name">YOU</span>
+              <span id="sc-player-dot" class="sc-serve-dot active" title="Current Server"></span>
+              <div id="sc-player-score" class="sc-digits">0</div>
             </div>
 
-            <!-- Player 2 (AI Opponent) -->
-            <div class="scoreboard-player-row">
-              <div id="sc-ai-score" class="sc-score-box">0</div>
-              <span id="sc-ai-dot" class="service-dot" title="Serving"></span>
-              <span class="sc-player-name">VIKTOR AI</span>
-              <span class="sc-player-flag">🇩🇰</span>
+            <div class="sc-separator">VS</div>
+
+            <!-- Player 2 (Viktor AI) -->
+            <div class="sc-competitor sc-ai">
+              <div id="sc-ai-score" class="sc-digits">0</div>
+              <span id="sc-ai-dot" class="sc-serve-dot" title="Current Server"></span>
+              <span class="sc-name">VIKTOR AI</span>
+              <span class="sc-flag">DEN</span>
             </div>
           </div>
 
-          <!-- Top Left: Speedometer & Shot Banner -->
-          <div class="arena-top-left">
-            <div class="speedometer-card">
-              <div>
-                <div id="arena-speed-val" class="speedo-val">0</div>
-                <div class="speedo-unit">KM / H SHUTTLE SPEED</div>
+          <!-- Speedometer & Shot Feedback Telemetry -->
+          <div class="arena-telemetry-left">
+            <div class="radar-gauge">
+              <div class="gauge-title">HAWK-EYE SPEEDOMETER</div>
+              <div class="speed-readout">
+                <span id="arena-speed-val" class="speed-num">0</span>
+                <span class="speed-unit">KM/H</span>
               </div>
             </div>
-            <div id="arena-shot-banner" class="shot-banner">READY • SERVE!</div>
+            
+            <div id="arena-shot-banner" class="shot-callout">MATCH READY</div>
           </div>
 
-          <!-- Bottom Bar: Camera Controls & Gesture PIP -->
-          <div class="arena-bottom-bar">
+          <!-- Bottom Control Strip -->
+          <div class="arena-bottom-controls">
 
-            <!-- Camera Angles -->
-            <div class="camera-controls-pill">
-              <button class="cam-btn active" data-camera-mode="behind">🎥 Player Cam</button>
-              <button class="cam-btn" data-camera-mode="broadcast">📺 TV Broadcast</button>
-              <button class="cam-btn" data-camera-mode="top">🗺️ Tactical Top</button>
+            <!-- Camera View Selectors -->
+            <div class="camera-switcher">
+              <button class="cam-option active" data-camera-mode="behind">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+                <span>PLAYER CAM</span>
+              </button>
+              
+              <button class="cam-option" data-camera-mode="broadcast">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="7" width="20" height="15" rx="2" ry="2"/>
+                  <polyline points="17 2 12 7 7 2"/>
+                </svg>
+                <span>BROADCAST</span>
+              </button>
+              
+              <button class="cam-option" data-camera-mode="top">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                  <polyline points="2 17 12 22 22 17"/>
+                  <polyline points="2 12 12 17 22 12"/>
+                </svg>
+                <span>TACTICAL TOP</span>
+              </button>
             </div>
 
-            <!-- Keyboard Fallback Hint -->
-            <div class="control-hint-box">
-              <span><strong>Controls:</strong></span>
-              <span><kbd>Mouse / Hand</kbd> Move</span>
-              <span><kbd>Click / Up</kbd> Smash</span>
-              <span><kbd>R-Click / Down</kbd> Drop</span>
-              <span><kbd>Space</kbd> Clear</span>
+            <!-- Keybind Reference Pill -->
+            <div class="control-key-guide">
+              <span class="guide-item"><kbd>MOUSE/HAND</kbd> POSITION</span>
+              <span class="guide-item"><kbd>CLICK/W</kbd> SMASH</span>
+              <span class="guide-item"><kbd>R-CLICK/S</kbd> DROP</span>
+              <span class="guide-item"><kbd>SPACE</kbd> CLEAR</span>
             </div>
 
-            <!-- Hand Gesture Webcam PIP -->
-            <div class="gesture-hud-pip">
-              <div class="pip-header">
-                <span>📹 Gesture Tracker</span>
-                <span id="pip-gesture-feedback" style="font-size: 0.65rem; color: #94a3b8;">Active</span>
+            <!-- Live 21-Node Skeletal Hand Mesh PIP -->
+            <div class="pip-skeletal-box">
+              <div class="pip-bar">
+                <span class="pip-title">21-NODE HAND MESH</span>
+                <span id="pip-gesture-feedback" class="pip-telemetry-val">STANDBY</span>
               </div>
-              <div class="pip-video-container">
-                <video id="pip-webcam-video" class="pip-video" autoplay playsinline muted></video>
-                <canvas id="pip-hand-canvas" class="pip-hand-canvas" width="220" height="120"></canvas>
+              <div class="pip-stage">
+                <video id="pip-webcam-video" class="pip-webcam" playsinline muted autoplay></video>
+                <canvas id="pip-hand-canvas" class="pip-overlay" width="220" height="140"></canvas>
               </div>
-              <div class="pip-status">
-                <span>Status:</span>
-                <span id="pip-hand-status" class="detected">Tracking Active</span>
+              <div class="pip-footer">
+                <span class="pip-dot-status"></span>
+                <span id="pip-hand-status" class="pip-status-label">Awaiting Hand In Frame</span>
               </div>
             </div>
 
@@ -316,110 +466,114 @@
     </main>
 
     <!-- ====================================================================
-         VIEW 3: POST-MATCH GEMMA AI ANALYSIS VIEW
+         VIEW 3: POST-MATCH GEMMA AI TELEMETRY DEBRIEF
          ==================================================================== -->
     <main id="view-analytics" class="view-screen">
-      <div class="analytics-content">
+      <div class="analytics-viewport">
 
-        <!-- Victory / Defeat Banner -->
-        <section class="victory-banner">
-          <h1 id="analytics-victory-title" class="victory-title">VICTORY! MATCH WON</h1>
-          <div id="analytics-victory-score" class="victory-score">YOU 11 — 7 AI OPPONENT</div>
-          <p style="color: var(--text-muted); margin-top: 0.5rem;">Match officially completed under BWF tournament regulations</p>
+        <!-- Result Strip -->
+        <section class="match-summary-banner">
+          <div class="summary-badge">OFFICIAL MATCH CONCLUSION</div>
+          <h1 id="analytics-victory-title" class="summary-outcome">VICTORY</h1>
+          <div id="analytics-victory-score" class="summary-scoreline">YOU 11 — 7 VIKTOR AI</div>
+          <div class="summary-timestamp">BWF CERTIFIED SIMULATION • DURATION 4M 12S</div>
         </section>
 
-        <div class="analytics-grid">
+        <div class="debrief-grid">
 
           <!-- Gemma AI Coach Card -->
-          <div class="gemma-coach-card">
-            <div class="gemma-header">
-              <div class="gemma-badge">
-                <div class="gemma-avatar">🤖</div>
-                <div>
-                  <h3 style="font-family: var(--font-display); font-size: 1.3rem;">GEMMA SPORTS AI COACH</h3>
-                  <div style="font-size: 0.75rem; color: var(--text-muted);">Real-time Tactical Match Telemetry Analysis</div>
-                </div>
+          <div class="surface-card gemma-card">
+            <div class="card-title-bar">
+              <div class="card-heading">
+                <svg class="heading-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="10" rx="2"/>
+                  <circle cx="12" cy="5" r="2"/>
+                  <path d="M12 7v4"/>
+                  <line x1="8" y1="16" x2="8" y2="16"/>
+                  <line x1="16" y1="16" x2="16" y2="16"/>
+                </svg>
+                <span>Google Gemma AI Coach Tactical Debrief</span>
               </div>
-              <div class="gemma-status-pill">OLLAMA GEMMA READY</div>
+              <span class="gemma-engine-tag">OLLAMA GEMMA 2</span>
             </div>
 
-            <!-- Dynamic Streamed AI Analysis Terminal -->
-            <div id="gemma-terminal-text" class="gemma-output-terminal">
-              Analyzing shuttle flight aerodynamics, rally pacing, and player attack efficiency...
-              <span class="gemma-typing-indicator"></span>
+            <!-- Terminal Output -->
+            <div id="gemma-terminal-text" class="gemma-terminal-view">
+              Processing match telemetry coordinates, velocity gradients, and rally distribution...
+              <span class="terminal-cursor"></span>
             </div>
 
-            <!-- Gemma Backend Configuration Bar -->
-            <div class="gemma-settings-bar">
-              <span style="color: var(--text-dim);">Backend: <code>http://localhost:11434</code> (Gemma 2)</span>
-              <button class="gemma-toggle-btn" onclick="window.SmashApp && window.SmashApp.triggerGemmaAnalysis(window.BadmintonStats.getSummary())">
-                🔄 Re-Analyze with Gemma
+            <div class="gemma-command-bar">
+              <div class="backend-info">
+                <span>MODEL:</span> <code>gemma2</code> <span>ENDPOINT:</span> <code>http://localhost:11434</code>
+              </div>
+              <button class="btn-rerun-gemma" onclick="window.SmashApp && window.SmashApp.triggerGemmaAnalysis(window.BadmintonStats.getSummary())">
+                RE-ANALYZE MATCH
               </button>
             </div>
           </div>
 
-          <!-- Match Statistics & Heatmap Breakdown -->
-          <div class="dash-card">
-            <div class="card-header">
-              <div class="card-title">📊 Match Performance Telemetry</div>
-              <span style="font-size: 0.8rem; color: var(--brand-green); font-weight: 700;">VS VIKTOR AI</span>
+          <!-- Telemetry Heatmap & Metrics -->
+          <div class="surface-card">
+            <div class="card-title-bar">
+              <div class="card-heading">
+                <svg class="heading-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                </svg>
+                <span>Court Heatmap & Shot Dispersion</span>
+              </div>
+              <span class="court-dimension-tag">13.4m × 6.1m</span>
             </div>
 
-            <div class="match-stats-breakdown">
-              <!-- Smashes -->
-              <div class="stat-comparison-row">
-                <div class="stat-labels">
-                  <span>Player Smashes: <strong id="stat-p-smashes" style="color: var(--brand-green);">0</strong></span>
-                  <span>AI: <strong id="stat-a-smashes" style="color: var(--brand-red);">0</strong></span>
+            <!-- Match Stats Comparators -->
+            <div class="match-comparators">
+              <div class="comp-item">
+                <div class="comp-header">
+                  <span>Power Smashes</span>
+                  <span class="comp-numbers"><strong id="stat-p-smashes">0</strong> vs <span id="stat-a-smashes">0</span></span>
                 </div>
-                <div class="stat-comparison-bar">
-                  <div id="bar-smashes-user" class="comp-bar-user" style="width: 50%;"></div>
-                  <div class="comp-bar-ai" style="flex: 1;"></div>
-                </div>
-              </div>
-
-              <!-- Top Smash Speed -->
-              <div class="stat-comparison-row">
-                <div class="stat-labels">
-                  <span>Peak Speed: <strong id="stat-p-speed" style="color: var(--brand-green);">0 km/h</strong></span>
-                  <span>AI: <strong id="stat-a-speed" style="color: var(--brand-red);">0 km/h</strong></span>
+                <div class="comp-track">
+                  <div id="bar-smashes-user" class="comp-fill-user" style="width: 50%;"></div>
+                  <div class="comp-fill-ai" style="flex: 1;"></div>
                 </div>
               </div>
 
-              <!-- Drop Shots -->
-              <div class="stat-comparison-row">
-                <div class="stat-labels">
-                  <span>Deceptive Net Drops: <strong id="stat-p-drops" style="color: var(--brand-green);">0</strong></span>
-                  <span>AI: <strong id="stat-a-drops" style="color: var(--brand-red);">0</strong></span>
+              <div class="comp-item">
+                <div class="comp-header">
+                  <span>Peak Smash Velocity</span>
+                  <span class="comp-numbers"><strong id="stat-p-speed">0 km/h</strong> vs <span id="stat-a-speed">0 km/h</span></span>
                 </div>
               </div>
 
-              <!-- Average Rally Length -->
-              <div class="stat-comparison-row">
-                <div class="stat-labels">
-                  <span>Average Rally Length:</span>
-                  <strong id="stat-avg-rally" style="color: var(--brand-blue);">0 shots</strong>
+              <div class="comp-item">
+                <div class="comp-header">
+                  <span>Tumbling Net Drops</span>
+                  <span class="comp-numbers"><strong id="stat-p-drops">0</strong> vs <span id="stat-a-drops">0</span></span>
                 </div>
               </div>
-            </div>
 
-            <!-- Court Landing Heatmap -->
-            <div class="court-heatmap-card">
-              <div style="font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">
-                Shuttle Landing Heatmap (Green = You, Red = AI)
-              </div>
-              <div class="heatmap-canvas-box">
-                <canvas id="court-heatmap-canvas" width="320" height="180"></canvas>
+              <div class="comp-item">
+                <div class="comp-header">
+                  <span>Average Rally Length</span>
+                  <span class="comp-numbers"><strong id="stat-avg-rally">0 shots</strong></span>
+                </div>
               </div>
             </div>
 
-            <!-- Action Buttons -->
-            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-              <button id="btn-rematch" class="btn-primary" style="flex: 1; padding: 0.85rem 1rem; font-size: 1rem; justify-content: center;">
-                🏸 REMATCH
+            <!-- Court Heatmap Canvas -->
+            <div class="heatmap-section">
+              <div class="heatmap-title">SHUTTLE LANDING MATRIX (GREEN: YOU, RED: AI)</div>
+              <div class="heatmap-canvas-wrapper">
+                <canvas id="court-heatmap-canvas" width="340" height="190"></canvas>
+              </div>
+            </div>
+
+            <div class="action-btn-row">
+              <button id="btn-rematch" class="btn-primary-action">
+                <span>REMATCH</span>
               </button>
-              <button id="btn-back-dashboard" class="btn-secondary" style="flex: 1; padding: 0.85rem 1rem; font-size: 1rem; justify-content: center;">
-                🏆 TOURNAMENT HUB
+              <button id="btn-back-dashboard" class="btn-secondary-action">
+                <span>RETURN TO HUB</span>
               </button>
             </div>
 
@@ -431,39 +585,51 @@
     </main>
 
     <!-- ====================================================================
-         VIEW 4: GESTURE CALIBRATION & PRACTICE COURT
+         VIEW 4: GESTURE CALIBRATION & HARDWARE CHECK
          ==================================================================== -->
     <main id="view-practice" class="view-screen">
-      <div class="dashboard-content">
-        <section class="hero-match-banner" style="padding: 2.5rem;">
-          <div>
-            <div class="hero-tag">🎯 CALIBRATION & PRACTICE LAB</div>
-            <h2 style="font-family: var(--font-display); font-size: 2.5rem; font-weight: 800; margin-bottom: 0.75rem;">
-              TUNE YOUR SWINGS & GESTURES
-            </h2>
-            <p style="color: var(--text-muted); line-height: 1.6; max-width: 600px; margin-bottom: 1.5rem;">
-              Position your webcam so your upper torso and swinging hand are clearly visible. Practice high clears, downward smashes, and soft drops. Your gesture friend can monitor coordinates in the developer console.
-            </p>
-            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-              <button class="btn-primary" onclick="window.SmashApp && window.SmashApp.startNewMatch()">
-                ⚡ ENTER REAL MATCH
-              </button>
-              <button class="btn-secondary" onclick="window.BadmintonGestureBridge && window.BadmintonGestureBridge.triggerShot('smash')">
-                🔥 Test Smash Event
-              </button>
-              <button class="btn-secondary" onclick="window.BadmintonGestureBridge && window.BadmintonGestureBridge.triggerShot('drop')">
-                🏸 Test Drop Event
-              </button>
+      <div class="dashboard-viewport">
+        <section class="h2h-match-card" style="padding: 2.5rem;">
+          <div class="h2h-header">
+            <div class="h2h-series-badge">
+              <span class="badge-dot"></span>
+              <span>CALIBRATION & HARDWARE TELEMETRY LAB</span>
             </div>
           </div>
-          <div style="background: #000; border-radius: 18px; padding: 1.5rem; border: 1px solid rgba(0, 230, 118, 0.3);">
-            <h4 style="font-family: var(--font-display); color: var(--brand-green); margin-bottom: 0.5rem;">HAND CV BRIDGE LOG</h4>
-            <div style="font-size: 0.8rem; color: #a5f3fc; font-family: monospace; line-height: 1.7;">
-              ✓ window.BadmintonGestureBridge: READY<br>
-              ✓ Event: 'badminton-gesture-move' (x, y)<br>
-              ✓ Event: 'badminton-gesture-shot' (type)<br>
-              ✓ Audio Synthesizer: 48kHz Web Audio<br>
-              ✓ Ollama Gemma Endpoint: /api/generate
+
+          <div style="margin-top: 1.5rem; display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem; align-items: center;">
+            <div>
+              <h2 style="font-family: var(--font-display); font-size: 2.2rem; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 0.75rem;">
+                21-LANDMARK SKELETAL VERIFICATION
+              </h2>
+              <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.7; margin-bottom: 1.5rem;">
+                Unlike generic centroid trackers that accidentally lock onto faces and heads, our integrated <strong>MediaPipe Hands</strong> model isolates 21 individual knuckle and finger coordinates. Raise your hand in front of the lens to view the real-time geometric mesh.
+              </p>
+              
+              <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button class="btn-play-action" onclick="window.SmashApp && window.SmashApp.startNewMatch()">
+                  <span>ENTER ARENA</span>
+                </button>
+                <button class="system-btn" onclick="window.BadmintonGestureBridge && window.BadmintonGestureBridge.triggerShot('smash')">
+                  <span>TEST SMASH (340 KM/H)</span>
+                </button>
+                <button class="system-btn" onclick="window.BadmintonGestureBridge && window.BadmintonGestureBridge.triggerShot('drop')">
+                  <span>TEST DROP SHOT</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="terminal-panel">
+              <div class="term-title">HARDWARE INTERFACE CHANNELS</div>
+              <div class="term-log">
+                [OK] Video Device: 640x480 @ 30fps<br>
+                [OK] Model: MediaPipe Hands v0.4 (Simd Wasm)<br>
+                [OK] Landmark Schema: 21 Knuckle Nodes<br>
+                [OK] AI Opponent Engine: Safe Trajectory Calculus<br>
+                [OK] Synthesizer: 48,000 Hz Web Audio API<br>
+                [OK] Ollama Hook: POST /api/generate<br>
+                [READY] Status: All Subsystems Nominal
+              </div>
             </div>
           </div>
         </section>
@@ -471,69 +637,77 @@
     </main>
 
     <!-- ====================================================================
-         SETTINGS MODAL
+         SETTINGS MODAL DRAWER
          ==================================================================== -->
-    <div id="settings-modal" class="modal-overlay">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>⚙️ Match & AI Settings</h2>
-          <button id="btn-close-settings" class="modal-close-btn">&times;</button>
-        </div>
-
-        <div class="setting-row">
-          <div class="setting-info">
-            <h4>Match Target Points</h4>
-            <p>Official sets to 11 or 21 points</p>
+    <div id="settings-modal" class="modal-backdrop">
+      <div class="modal-dialog">
+        <div class="dialog-header">
+          <div class="dialog-title">
+            <svg class="heading-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <span>Simulation & Match Settings</span>
           </div>
-          <select id="setting-target-score" class="app-select">
-            <option value="11">11 Points (Quick Match)</option>
-            <option value="21">21 Points (Championship Set)</option>
-          </select>
+          <button id="btn-close-settings" class="dialog-close">&times;</button>
         </div>
 
-        <div class="setting-row">
-          <div class="setting-info">
-            <h4>Opponent Difficulty</h4>
-            <p>AI reaction time & tactical smash rate</p>
+        <div class="dialog-body">
+          <div class="config-row">
+            <div class="config-text">
+              <div class="cfg-name">Match Target Score</div>
+              <div class="cfg-desc">BWF official single set point threshold</div>
+            </div>
+            <select id="setting-target-score" class="cfg-select">
+              <option value="11">11 Points (Quick Tournament)</option>
+              <option value="21">21 Points (Championship Final)</option>
+            </select>
           </div>
-          <select id="setting-difficulty" class="app-select">
-            <option value="rookie">Rookie (Beginner)</option>
-            <option value="pro" selected>Pro (BWF Contender)</option>
-            <option value="legend">Legend (World Champion)</option>
-          </select>
-        </div>
 
-        <div class="setting-row">
-          <div class="setting-info">
-            <h4>Court Visual Theme</h4>
-            <p>Color styling of court mat and lines</p>
+          <div class="config-row">
+            <div class="config-text">
+              <div class="cfg-name">Opponent AI Difficulty</div>
+              <div class="cfg-desc">Trajectory calculation & reaction speed</div>
+            </div>
+            <select id="setting-difficulty" class="cfg-select">
+              <option value="rookie">Rookie (Basic Rallies)</option>
+              <option value="pro" selected>Pro Contender (Balanced BWF)</option>
+              <option value="legend">World Champion Legend (Viktor AI)</option>
+            </select>
           </div>
-          <select id="setting-theme" class="app-select">
-            <option value="bwf-green" selected>BWF Emerald Green Mat</option>
-            <option value="neon-cyber">Neon Cyber Arena</option>
-            <option value="wooden-classic">Classic Indoor Timber</option>
-          </select>
-        </div>
 
-        <div class="setting-row">
-          <div class="setting-info">
-            <h4>Ollama Backend URL</h4>
-            <p>For your friend's local or hosted Ollama</p>
+          <div class="config-row">
+            <div class="config-text">
+              <div class="cfg-name">Court Mat Surface</div>
+              <div class="cfg-desc">Texture style and line markings</div>
+            </div>
+            <select id="setting-theme" class="cfg-select">
+              <option value="bwf-green" selected>BWF Emerald Tournament Mat</option>
+              <option value="neon-cyber">Cyber Esports Obsidian</option>
+              <option value="wooden-classic">Hardwood Stadium Parquet</option>
+            </select>
           </div>
-          <input type="text" id="setting-ollama-url" class="app-input" value="http://localhost:11434" style="width: 200px;">
-        </div>
 
-        <div class="setting-row">
-          <div class="setting-info">
-            <h4>Ollama Model Name</h4>
-            <p>Default: gemma2, gemma:2b, or gemma:7b</p>
+          <div class="config-row">
+            <div class="config-text">
+              <div class="cfg-name">Ollama Backend URL</div>
+              <div class="cfg-desc">Local Ollama inference endpoint</div>
+            </div>
+            <input type="text" id="setting-ollama-url" class="cfg-input" value="http://localhost:11434">
           </div>
-          <input type="text" id="setting-ollama-model" class="app-input" value="gemma2" style="width: 200px;">
+
+          <div class="config-row">
+            <div class="config-text">
+              <div class="cfg-name">Gemma Model Tag</div>
+              <div class="cfg-desc">Target model installed in Ollama</div>
+            </div>
+            <input type="text" id="setting-ollama-model" class="cfg-input" value="gemma2">
+          </div>
         </div>
 
-        <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
-          <button id="btn-save-settings" class="btn-primary" style="padding: 0.6rem 1.5rem; font-size: 0.95rem;">
-            Save Settings
+        <div class="dialog-footer">
+          <button id="btn-save-settings" class="btn-primary-action">
+            SAVE CONFIGURATION
           </button>
         </div>
       </div>
@@ -541,7 +715,7 @@
 
   </div>
 
-  <!-- Application Scripts -->
+  <!-- Application Modules -->
   <script src="js/audio.js"></script>
   <script src="js/game/court.js"></script>
   <script src="js/game/shuttlecock.js"></script>
@@ -555,4 +729,3 @@
 
 </body>
 </html>
-
